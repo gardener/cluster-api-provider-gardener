@@ -101,6 +101,9 @@ kind-gardener-up: gardener
 clusterctl-init: clusterctl
 	KUBECONFIG=$(GARDENER_KUBECONFIG) EXP_MACHINE_POOL=true $(CLUSTERCTL) init
 
+.PHONY: ci-e2e-kind
+ci-e2e-kind: kind-gardener-up clusterctl-init test-e2e
+
 .PHONY: format
 format: goimports goimports-reviser ## Format imports.
 	@./hack/format.sh ./api ./cmd ./internal ./test
