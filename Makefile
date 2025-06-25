@@ -75,7 +75,8 @@ deepcopy: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, 
 	@controller-gen object:headerFile="hack/LICENSE_BOILERPLATE.txt" paths="./api/...;./cmd/...;./internal/..."
 
 .PHONY: generate
-generate: manifests deepcopy fmt lint-fix format vet ## Generate and reformat code.
+generate: manifests deepcopy fmt lint-fix format vet $(YQ) ## Generate and reformat code.
+	@./hack/generate-renovate-ignore-deps.sh
 
 .PHONY: check
 check: generate sast ## Run generators, formatters and linters and check whether files have been modified.
