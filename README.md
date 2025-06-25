@@ -1,101 +1,203 @@
-# <repo name>
+# cluster-api-provider-gardener
 
-[![reuse compliant](https://reuse.software/badge/reuse-compliant.svg)](https://reuse.software/)
+Kubernetes-native declarative infrastructure for Gardener Shoots.
 
-## How to use this repository template
+## Description
+The `cluster-api-provider-gardener` integrates Gardener with Cluster API, enabling the management of Kubernetes clusters
+using Gardener as the control plane provider.
+This provider allows users to leverage the powerful features of Gardener for cluster lifecycle management.
 
-This template repository can be used to seed new git repositories in the gardener github organisation.
+The controller is also KCP-aware, meaning that it can also be used in KCP as a KCP-controller.
 
-- [Create the new repository](https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template)
-  based on this template repository
-- Replacing placeholders:
-  - In file `.reuse/dep5` replace placeholder `<repo name>` with the name of your new repository.
-  - In file `CODEOWNERS` replace `<repo name>` and `<maintainer team>`. Use the name of the github team in [gardener teams](https://github.com/orgs/gardener/teams) defining maintainers of the new repository.
-- Set the repository description in the "About" section of your repository
-- Describe the new component in additional sections in this `README.md`
-- Ask the [Owner of the gardener github organisation](https://github.com/orgs/gardener/people?query=role%3Aowner)
-  - to double-check the initial content of this repository
-  - to create the maintainer team for this new repository
-  - to make this repository public
-  - protect at least the master branch requiring mandatory code review by the maintainers defined in CODEOWNERS
-  - grant admin permission to the maintainers team of the new repository defined in CODEOWNERS
+## Getting Started
 
-## Maintain copyright and license information
-By default all source code files are under `Apache 2.0` and all markdown files are under `Creative Commons` license.
+### Common Prerequisites
 
-When creating new source code files the license and copyright information should be provided using corresponding SPDX headers.
+The following prerequisites apply to all the following deployment-scenarios.
+Please refer to the individual scenario of your choice for the specific prerequisites.
 
-Example for go source code files (replace `<year>` with the current year)
-```
-/*
- * SPDX-FileCopyrightText: <year> SAP SE or an SAP affiliate company and Gardener contributors
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-```
+- go version v1.24.0+
+- docker version 17.03+.
+- kubectl version v1.11.3+.
+- Access to a Kubernetes v1.11.3+ cluster.
+- a (local) Gardener cluster
 
-### Third-party source code
+### KCP
 
-If you copy third-party code into this repository or fork a repository, you must keep the license and copyright information (usually defined in the header of the file).
+#### Prerequisites
 
-In addition you should adapt the `.reuse/dep5` file and assign the correct copyright and license information.
+- a KCP server (`KUBECONFIG` usually is located in `.kcp/admin.kubeconfig`, relative from where KCP is started)
+- KCP's `kubectl` plugins
 
-**Example `dep5` file if you copy source code into your repository:**
-```
-Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Gardener <repo name>
-Upstream-Contact: The Gardener project <gardener@googlegroups.com>
-Source: https://github.com/gardener/<repo name>
+#### To Deploy on the cluster
 
-# --------------------------------------------------
-# source code
-
-Files: *
-Copyright: 2017-2024 SAP SE or an SAP affiliate company and Gardener contributors
-License: Apache-2.0
-
-# --------------------------------------------------
-# documentation
-
-Files: *.md
-Copyright: 2017-2024 SAP SE or an SAP affiliate company and Gardener contributors
-License: CC-BY-4.0
-
-# --------------------------------------------------
-# third-party
-
-# --- copied source code ---
-Files: pkg/utils/validation/kubernetes/core/*
-Copyright: 2014 The Kubernetes Authors.
-License: Apache-2.0
-```
-**Example `dep5` file if you have forked a repository:**
-```
-Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Gardener fork of kubernetes/autoscaler
-Upstream-Contact: The Gardener project <gardener@googlegroups.com>
-Source: https://github.com/gardener/autoscaler
-Comment: This is a fork of kubernetes/autoscaler (https://github.com/kubernetes/autoscaler)
-
-# --------------------------------------------------
-# source code
-
-Files: *
-Copyright: 2016-2018 The Kubernetes Authors.
-License: Apache-2.0
-
-Files: .ci/*
-Copyright: 2024 SAP SE or an SAP affiliate company and Gardener contributors
-License: Apache-2.0
+**Create controller workspace:**
+> **NOTE**: For our quick-start, we use `:root:gardener` as our controller-workspace.
+```shell
+kubectl create workspace gardener --enter
 ```
 
-#### Modifications
-In case you modify copied/forked source code you must state this in the header via the following text:
+**Create `APIResourceSchema`s, `APIExport` and `APIBinding` in Controller-workspace:**
+```shell
+kubectl apply -f schemas/gardener
+```
 
-**Modifications Copyright <year> SAP SE or an SAP affiliate company and Gardener contributors**
+> **NOTE**: `APIBinding.spec.reference.export.path` may needs to be adapted when you don't use `:root:gardener` as your controller-workspace.
+```shell
+kubectl apply -f schemas/binding.yaml
+```
 
+**Run controller:**
+```shell
+ENABLE_WEBHOOKS=false go run cmd/main.go --kubeconfig <path/to/kcp-kubeconfig> -gardener-kubeconfig  <path/to/gardener/kubeconfig.yaml>
+```
 
-### Get your reuse badge
-To get your project reuse compliant you should register it [here](https://api.reuse.software/register) using your SAP email address. After confirming your email, an inital reuse check is done by the reuse API.
+**Create and enter consuming workspace:**
+```shell
+kubectl create workspace test --enter
+```
 
-To add the badge to your project's `README.md` file, use the snipped provided by the reuse API.
+**Create `APIBinding` for consuming workspace:**
+```shell
+kubectl apply -f schemas/binding.yaml
+```
+
+**Apply `Cluster` resources in consuming workspace:**
+```shell
+kubectl apply -f config/samples/workerful.yaml
+```
+
+### Cluster-API
+
+The local-setup assumes, that you deploy Cluster-API next to the virtual Garden-Cluster, which is _not_ intended for production.
+
+#### Prerequisites
+
+You will need a Cluster-API management cluster, with the `EXP_MACHINE_POOL` feature gate enabled.
+You can use the following command to create a management cluster with the `EXP_MACHINE_POOL` feature gate enabled:
+
+```sh
+EXP_MACHINE_POOL=true clusterctl init
+```
+
+#### To Deploy on the cluster
+
+**Build and push your image to the location specified by `IMG`:**
+
+```sh
+make docker-build docker-push IMG=localhost:5001/cluster-api-provider-gardener/controller:latest
+```
+
+**NOTE:** This image ought to be published in the personal registry you specified.
+And it is required to have access to pull the image from the working environment.
+Make sure you have the proper permission to the registry if the above commands don’t work.
+
+**Install the CRDs into the cluster:**
+
+```sh
+make install
+```
+
+**Deploy the Manager to the cluster with the image specified by `IMG`:**
+
+> **NOTE**: This target assumes that you are running a local Gardener.
+>
+> For production environments, do not use the `config/overlays/dev` kustomization.
+
+```sh
+make deploy IMG=localhost:5001/cluster-api-provider-gardener/controller:latest GARDENER_KUBECONFIG=<path/to/gardener/kubeconfig.yaml>
+```
+
+> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
+privileges or be logged in as admin.
+
+**Create instances of your solution**
+You can apply the samples (examples) from the config/sample:
+
+> **NOTE**: When using this in a local deployment, this works, but just with the name of `hello-gardener` in the namespace `default`.
+>
+> This is because of the special setup of Gardener and Cluster-API in the same cluster.
+> For details of this setup, see `config/overlays/dev`.
+
+```sh
+kubectl apply -k config/samples/
+```
+
+#### To Uninstall
+
+**Delete the instances (CRs) from the cluster:**
+
+```sh
+kubectl delete -k config/samples/
+```
+
+**Delete the APIs(CRDs) from the cluster:**
+
+```sh
+make uninstall
+```
+
+**UnDeploy the controller from the cluster:**
+
+```sh
+make undeploy
+```
+
+## Project Distribution
+
+Following the options to release and provide this solution to the users.
+
+### By providing a bundle with all YAML files
+
+1. Build the installer for the image built and published in the registry:
+
+```sh
+make build-installer IMG=localhost:5001/cluster-api-provider-gardener/controller:latest
+```
+
+**NOTE:** The makefile target mentioned above generates an 'install.yaml'
+file in the dist directory. This file contains all the resources built
+with Kustomize, which are necessary to install this project without its
+dependencies.
+
+2. Using the installer
+
+Users can just run 'kubectl apply -f <URL for YAML BUNDLE>' to install
+the project, i.e.:
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/lucabernstein/cluster-api-provider-gardener/main/dist/install.yaml
+```
+
+### By providing a Helm Chart
+
+1. Build the chart using the optional helm plugin
+
+```sh
+kubebuilder edit --plugins=helm/v1-alpha
+```
+
+2. See that a chart was generated under 'dist/chart', and users
+   can obtain this solution from there.
+
+**NOTE:** If you change the project, you need to update the Helm Chart
+using the same command above to sync the latest changes. Furthermore,
+if you create webhooks, you need to use the above command with
+the '--force' flag and manually ensure that any custom configuration
+previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
+is manually re-applied afterwards.
+
+## Contributing
+// TODO(user): Add detailed information on how you would like others to contribute to this project
+
+**NOTE:** Run `make help` for more information on all potential `make` targets
+
+More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+
+### Running E2E Tests Locally
+
+```bash
+make kind-gardener-up clusterctl-init
+
+make test-e2e
+```

@@ -1,0 +1,40 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: cluster-api-provider-gardener-system
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: cluster-api-provider-gardener
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: cluster-api-provider-gardener
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+        app.kubernetes.io/name: cluster-api-provider-gardener
+    spec:
+      volumes:
+        - name: kubeconfig
+          secret:
+            secretName: kubeconfig
+      containers:
+        - command:
+            - /manager
+          args:
+            - --health-probe-bind-address=:8081
+            - --gardener-kubeconfig=/etc/gardener-kubeconfig/kubeconfig
+            - --kubeconfig=/etc/kubeconfig/kubeconfig
+          image: localhost:5001/cluster-api-provider-gardener/controller:latest
+          name: manager
+          volumeMounts:
+            - mountPath: "/etc/kubeconfig"
+              name: kubeconfig

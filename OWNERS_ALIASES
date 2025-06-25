@@ -1,0 +1,13 @@
+# See the OWNERS docs at https://go.k8s.io/owners
+
+aliases:
+  cluster-api-provider-reviewers:
+  - LucaBernstein
+  - rfranzke
+  - timuthy
+  - tobschli
+  cluster-api-provider-approvers:
+  - LucaBernstein
+  - rfranzke
+  - timuthy
+  - tobschli

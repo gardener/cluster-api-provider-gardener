@@ -1,0 +1,32 @@
+/.kube-secrets
+/tmp
+/dev
+/local
+**/dev
+/bin
+/hack/tools/bin
+
+*.test
+*.coverprofile
+*.out
+*.html
+.vscode
+.idea
+.DS_Store
+*~
+
+TODO
+
+# Virtual go & fuse
+.virtualgo
+.fuse_hidden*
+
+.go-version
+
+/gardener
+
+# gosec
+gosec-report.sarif
+
+# Test binary, built with `go test -c`
+*.test

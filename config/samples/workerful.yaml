@@ -1,0 +1,91 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: hello-gardener
+spec:
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: GardenerShootCluster
+    name: hello-gardener
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+    kind: GardenerShootControlPlane
+    name: hello-gardener
+    namespace: default
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+kind: GardenerShootControlPlane
+metadata:
+  labels:
+    app.kubernetes.io/name: cluster-api-provider-gardener
+    app.kubernetes.io/managed-by: kustomize
+  name: hello-gardener
+spec:
+  # Defaulted to this objects namespace if not provided.
+  projectNamespace: garden-local
+  workerless: false
+  cloudProfile:
+    kind: CloudProfile
+    name: local
+  provider:
+    type: local
+  secretBindingName: local # dummy, doesn't contain any credentials
+  kubernetes:
+    version: "1.32"
+    kubelet:
+      seccompDefault: true
+      serializeImagePulls: false
+      registryPullQPS: 10
+      registryBurst: 20
+      protectKernelDefaults: true
+      streamingConnectionIdleTimeout: 5m
+  networking:
+    type: calico
+    nodes: 10.10.0.0/16
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: GardenerShootCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: cluster-api-provider-gardener
+    app.kubernetes.io/managed-by: kustomize
+  name: hello-gardener
+spec:
+  region: local
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: GardenerWorkerPool
+metadata:
+  labels:
+    app.kubernetes.io/name: cluster-api-provider-gardener
+    app.kubernetes.io/managed-by: kustomize
+  name: local
+spec:
+  machine:
+    type: local
+  cri:
+    name: containerd
+  minimum: 1
+  maximum: 2
+  maxSurge: 1
+  maxUnavailable: 0
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachinePool
+metadata:
+  labels:
+    app.kubernetes.io/name: cluster-api-provider-gardener
+    app.kubernetes.io/managed-by: kustomize
+  name: local
+spec:
+  clusterName: hello-gardener
+  replicas: 1
+  template:
+    spec:
+      clusterName: hello-gardener
+      bootstrap:
+        dataSecretName: "a" #TODO(tobschli): We need to decide what to do with this, as we do not support bootstrap data in Gardener atm.
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+        kind: GardenerWorkerPool
+        name: local

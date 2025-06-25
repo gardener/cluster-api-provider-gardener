@@ -1,0 +1,9 @@
+resources:
+- manager.yaml
+- kubeconfig.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: controller
+  newName: localhost:5001/cluster-api-provider-gardener/controller
+  newTag: latest

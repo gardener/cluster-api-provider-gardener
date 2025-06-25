@@ -1,0 +1,15 @@
+---
+apiVersion: apis.kcp.io/v1alpha1
+kind: APIBinding
+metadata:
+  name: controlplane.cluster.x-k8s.io
+spec:
+  reference:
+    export:
+      name: controlplane.cluster.x-k8s.io
+      path: "root:gardener"
+  permissionClaims:
+    - resource: "secrets"
+      all: true
+      group: ""
+      state: "Accepted"

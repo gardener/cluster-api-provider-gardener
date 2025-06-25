@@ -1,0 +1,206 @@
+apiVersion: apis.kcp.io/v1alpha1
+kind: APIResourceSchema
+metadata:
+  creationTimestamp: null
+  name: v250508-284c602.gardenershootclusters.infrastructure.cluster.x-k8s.io
+spec:
+  group: infrastructure.cluster.x-k8s.io
+  names:
+    kind: GardenerShootCluster
+    listKind: GardenerShootClusterList
+    plural: gardenershootclusters
+    singular: gardenershootcluster
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.ready
+      name: Ready
+      type: boolean
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      description: GardenerShootCluster is the Schema for the gardenershootclusters
+        API.
+      properties:
+        apiVersion:
+          description: |-
+            APIVersion defines the versioned schema of this representation of an object.
+            Servers should convert recognized schemas to the latest internal value, and
+            may reject unrecognized values.
+            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          type: string
+        kind:
+          description: |-
+            Kind is a string value representing the REST resource this object represents.
+            Servers may infer this from the endpoint the client submits requests to.
+            Cannot be updated.
+            In CamelCase.
+            More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: GardenerShootClusterSpec defines the desired state of GardenerShootCluster.
+          properties:
+            hibernation:
+              description: Hibernation contains information whether the Shoot is suspended
+                or not.
+              properties:
+                enabled:
+                  description: |-
+                    Enabled specifies whether the Shoot needs to be hibernated or not. If it is true, the Shoot's desired state is to be hibernated.
+                    If it is false or nil, the Shoot's desired state is to be awakened.
+                  type: boolean
+                schedules:
+                  description: Schedules determine the hibernation schedules.
+                  items:
+                    description: |-
+                      HibernationSchedule determines the hibernation schedule of a Shoot.
+                      A Shoot will be regularly hibernated at each start time and will be woken up at each end time.
+                      Start or End can be omitted, though at least one of each has to be specified.
+                    properties:
+                      end:
+                        description: End is a Cron spec at which time a Shoot will
+                          be woken up.
+                        type: string
+                      location:
+                        description: Location is the time location in which both start
+                          and shall be evaluated.
+                        type: string
+                      start:
+                        description: Start is a Cron spec at which time a Shoot will
+                          be hibernated.
+                        type: string
+                    type: object
+                  type: array
+              type: object
+            maintenance:
+              description: |-
+                Maintenance contains information about the time window for maintenance operations and which
+                operations should be performed.
+              properties:
+                autoUpdate:
+                  description: AutoUpdate contains information about which constraints
+                    should be automatically updated.
+                  properties:
+                    kubernetesVersion:
+                      description: 'KubernetesVersion indicates whether the patch
+                        Kubernetes version may be automatically updated (default:
+                        true).'
+                      type: boolean
+                    machineImageVersion:
+                      description: 'MachineImageVersion indicates whether the machine
+                        image version may be automatically updated (default: true).'
+                      type: boolean
+                  required:
+                  - kubernetesVersion
+                  type: object
+                confineSpecUpdateRollout:
+                  description: |-
+                    ConfineSpecUpdateRollout prevents that changes/updates to the shoot specification will be rolled out immediately.
+                    Instead, they are rolled out during the shoot's maintenance time window. There is one exception that will trigger
+                    an immediate roll out which is changes to the Spec.Hibernation.Enabled field.
+                  type: boolean
+                timeWindow:
+                  description: TimeWindow contains information about the time window
+                    for maintenance operations.
+                  properties:
+                    begin:
+                      description: |-
+                        Begin is the beginning of the time window in the format HHMMSS+ZONE, e.g. "220000+0100".
+                        If not present, a random value will be computed.
+                      pattern: ([0-1][0-9]|2[0-3])[0-5][0-9][0-5][0-9]\+[0-1][0-4]00
+                      type: string
+                    end:
+                      description: |-
+                        End is the end of the time window in the format HHMMSS+ZONE, e.g. "220000+0100".
+                        If not present, the value will be computed based on the "Begin" value.
+                      pattern: ([0-1][0-9]|2[0-3])[0-5][0-9][0-5][0-9]\+[0-1][0-4]00
+                      type: string
+                  required:
+                  - begin
+                  - end
+                  type: object
+              type: object
+            region:
+              description: Region is a name of a region. This field is immutable.
+              type: string
+            seedName:
+              description: SeedName is the name of the seed cluster that runs the
+                control plane of the Shoot.
+              type: string
+            seedSelector:
+              description: SeedSelector is an optional selector which must match a
+                seed's labels for the shoot to be scheduled on that seed.
+              properties:
+                matchExpressions:
+                  description: matchExpressions is a list of label selector requirements.
+                    The requirements are ANDed.
+                  items:
+                    description: |-
+                      A label selector requirement is a selector that contains values, a key, and an operator that
+                      relates the key and values.
+                    properties:
+                      key:
+                        description: key is the label key that the selector applies
+                          to.
+                        type: string
+                      operator:
+                        description: |-
+                          operator represents a key's relationship to a set of values.
+                          Valid operators are In, NotIn, Exists and DoesNotExist.
+                        type: string
+                      values:
+                        description: |-
+                          values is an array of string values. If the operator is In or NotIn,
+                          the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                          the values array must be empty. This array is replaced during a strategic
+                          merge patch.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                    required:
+                    - key
+                    - operator
+                    type: object
+                  type: array
+                  x-kubernetes-list-type: atomic
+                matchLabels:
+                  additionalProperties:
+                    type: string
+                  description: |-
+                    matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                    map is equivalent to an element of matchExpressions, whose key field is "key", the
+                    operator is "In", and the values array contains only "value". The requirements are ANDed.
+                  type: object
+                providerTypes:
+                  description: Providers is optional and can be used by restricting
+                    seeds by their provider type. '*' can be used to enable seeds
+                    regardless of their provider type.
+                  items:
+                    type: string
+                  type: array
+              type: object
+              x-kubernetes-map-type: atomic
+          required:
+          - region
+          type: object
+        status:
+          description: GardenerShootClusterStatus defines the observed state of GardenerShootCluster.
+          properties:
+            ready:
+              description: |-
+                Ready denotes that the Seed where the Shoot is hosted is ready.
+                NOTE: this field is part of the Cluster API contract and it is used to orchestrate provisioning.
+                The value of this field is never updated after provisioning is completed. Please use conditions
+                to check the operational state of the infa cluster.
+              type: boolean
+          type: object
+      type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -1,0 +1,43 @@
+version: "2"
+run:
+  timeout: 5m
+  concurrency: 4
+  allow-parallel-runners: true
+
+linters:
+  enable:
+  - ginkgolinter
+  - importas
+  - nilerr
+  - revive
+  - unconvert
+  - unparam
+  - whitespace
+  settings:
+    revive:
+      rules:
+      - name: duplicated-imports
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: context-as-argument
+      - name: early-return
+      - name: exported
+  exclusions:
+    rules:
+      #revive:
+      - path: (.+)\.go$
+        text: var-naming # ((var|const|struct field|func) .* should be .*
+      - path: (.+)\.go$
+        text: dot-imports # should not use dot imports
+      - path: (.+)\.go$
+        text: package-comments # package comment should be of the form
+      - path: (.+)\.go$
+        text: unexported-return # exported func .* returns unexported type .*, which can be annoying to use
+      - path: (.+)\.go$
+        text: indent-error-flow # if block ends with a return statement, so drop this else and outdent its block
+      - path: (.+)\.go$
+        text: 'exported: (type|func) name will be used as .* by other packages, and that stutters;'
+      - path: (.+)\.go$
+        text: exported function Convert_.* should have comment or be unexported
+      - path: (.+)\.go$
+        text: redundant-import-alias
