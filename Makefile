@@ -175,13 +175,13 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests kustomize envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(eval B64_GARDENER_KUBECONFIG_ENV := $(shell ./hack/gardener-kubeconfig.sh $(GARDENER_KUBECONFIG)))
 	@cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	@$(KUSTOMIZE) build config/overlays/dev | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | $(KUBECTL) apply -f -
 
 .PHONY: deploy-kcp
-deploy-kcp: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy-kcp: manifests kustomize envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(eval B64_GARDENER_KUBECONFIG_ENV := $(shell ./hack/gardener-kubeconfig.sh $(GARDENER_KUBECONFIG)))
 	@cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	@$(KUSTOMIZE) build config/overlays/kcp | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | $(KUBECTL) apply -f -
@@ -261,6 +261,11 @@ setup-envtest: envtest ## Download the binaries required for ENVTEST in the loca
 envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
+
+.PHONY: envsubst
+envsubst:
+	@which envsubst > /dev/null 2>&1 && echo "Found envsubst: $$(which envsubst)" || \
+		{ apt update && apt install -y gettext && echo "Successfully installed gettext for envsubst" || (echo "envsubst is not available. Please install GNU gettext to use envsubst."; exit 1); }
 
 .PHONY: golangci-lint
 golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
