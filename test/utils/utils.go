@@ -51,7 +51,7 @@ func Run(cmd *exec.Cmd) (string, error) {
 // InstallPrometheusOperator installs the prometheus Operator to be used to export the enabled metrics.
 func InstallPrometheusOperator() error {
 	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
-	cmd := exec.Command("kubectl", "create", "-f", url)
+	cmd := exec.Command("kubectl", "create", "-f", url) // #nosec G204 -- only used during test
 	_, err := Run(cmd)
 	return err
 }
@@ -59,7 +59,7 @@ func InstallPrometheusOperator() error {
 // UninstallPrometheusOperator uninstalls the prometheus
 func UninstallPrometheusOperator() {
 	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
-	cmd := exec.Command("kubectl", "delete", "-f", url)
+	cmd := exec.Command("kubectl", "delete", "-f", url) // #nosec G204 -- only used during test
 	if _, err := Run(cmd); err != nil {
 		warnError(err)
 	}
@@ -95,7 +95,7 @@ func IsPrometheusCRDsInstalled() bool {
 // UninstallCertManager uninstalls the cert manager
 func UninstallCertManager() {
 	url := fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
-	cmd := exec.Command("kubectl", "delete", "-f", url)
+	cmd := exec.Command("kubectl", "delete", "-f", url) // #nosec G204 -- only used during test
 	if _, err := Run(cmd); err != nil {
 		warnError(err)
 	}
@@ -104,7 +104,7 @@ func UninstallCertManager() {
 // InstallCertManager installs the cert manager bundle.
 func InstallCertManager() error {
 	url := fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
-	cmd := exec.Command("kubectl", "apply", "-f", url)
+	cmd := exec.Command("kubectl", "apply", "-f", url) // #nosec G204 -- only used during test
 	if _, err := Run(cmd); err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func GetProjectDir() (string, error) {
 func UncommentCode(filename, target, prefix string) error {
 	// false positive
 	// nolint:gosec
-	content, err := os.ReadFile(filename)
+	content, err := os.ReadFile(filename) // #nosec G304 -- only used during test
 	if err != nil {
 		return err
 	}
@@ -223,5 +223,5 @@ func UncommentCode(filename, target, prefix string) error {
 	}
 	// false positive
 	// nolint:gosec
-	return os.WriteFile(filename, out.Bytes(), 0644)
+	return os.WriteFile(filename, out.Bytes(), 0644) // #nosec G306 -- only used during test
 }
