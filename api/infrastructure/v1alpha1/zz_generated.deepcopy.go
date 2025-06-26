@@ -300,7 +300,7 @@ func (in *GardenerWorkerPoolSpec) DeepCopyInto(out *GardenerWorkerPoolSpec) {
 	if in.ControlPlane != nil {
 		in, out := &in.ControlPlane, &out.ControlPlane
 		*out = new(v1beta1.WorkerControlPlane)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 }
 
