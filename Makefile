@@ -48,7 +48,7 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: verify-extended
-verify-extended: check test ## Generate and reformat code, run tests
+verify-extended: check lint-config test ## Generate and reformat code, run tests
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -106,11 +106,11 @@ format: goimports goimports-reviser ## Format imports.
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter
-	$(GOLANGCI_LINT) run
+	$(GOLANGCI_LINT) run --timeout 10m
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
-	$(GOLANGCI_LINT) run --fix
+	$(GOLANGCI_LINT) run --fix --timeout 10m
 
 .PHONY: lint-config
 lint-config: golangci-lint ## Verify golangci-lint linter configuration
