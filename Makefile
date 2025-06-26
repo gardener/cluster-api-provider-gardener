@@ -82,12 +82,8 @@ test: setup-envtest ## Run tests.
 # CertManager is installed by default; skip with:
 # - CERT_MANAGER_INSTALL_SKIP=true
 .PHONY: test-e2e
-test-e2e: ## Run the e2e tests. Expected an isolated environment using Kind.
-	@command -v kind >/dev/null 2>&1 || { \
-		echo "Kind is not installed. Please install Kind manually."; \
-		exit 1; \
-	}
-	@kind get clusters | grep -q 'gardener' || { \
+test-e2e: kind ## Run the e2e tests. Expected an isolated environment using Kind.
+	$(KIND) get clusters | grep -q 'gardener' || { \
 		echo "No Kind cluster is running. Please start a Kind cluster before running the e2e tests."; \
 		exit 1; \
 	}
@@ -205,6 +201,7 @@ export PATH := $(abspath $(LOCALBIN)):$(PATH)
 
 ## Tool Binaries
 KUBECTL ?= kubectl
+KIND ?= $(LOCALBIN)/kind
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 GOIMPORTS ?= $(LOCALBIN)/goimports
@@ -215,6 +212,7 @@ CLUSTERCTL ?= $(LOCALBIN)/clusterctl
 GARDENER ?= $(LOCALBIN)/gardener
 
 ## Tool Versions
+KIND_VERSION ?= v0.29.0
 KUSTOMIZE_VERSION ?= v5.5.0
 CONTROLLER_TOOLS_VERSION ?= v0.17.2
 GOIMPORTS_VERSION ?= v0.31.0
@@ -225,6 +223,11 @@ ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 GOLANGCI_LINT_VERSION ?= v2.1.6
 CLUSTERCTL_VERSION ?= v1.9.6
+
+.PHONY: kind
+kind: $(KIND) ## Download kustomize locally if necessary.
+$(KIND): $(LOCALBIN)
+	$(call go-install-tool,$(KIND),sigs.k8s.io/kind/cmd/kind,$(KIND_VERSION))
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
