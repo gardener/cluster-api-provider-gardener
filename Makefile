@@ -5,7 +5,7 @@
 # Image URL to use all building/pushing image targets
 IMG ?= localhost:5001/cluster-api-provider-gardener/controller:latest
 GARDENER_KUBECONFIG ?= ./bin/gardener/example/provider-local/seed-kind/base/kubeconfig
-GARDENER_DIR ?= $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener)
+GARDENER_DIR ?= $(shell go mod tidy && go list -m -f '{{.Dir}}' github.com/gardener/gardener)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
