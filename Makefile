@@ -2,10 +2,26 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+ENSURE_GARDENER_MOD         := $(shell go get github.com/gardener/gardener@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener))
+GARDENER_HACK_DIR           := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
+REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+HACK_DIR                    := $(REPO_ROOT)/hack
+
 # Image URL to use all building/pushing image targets
 IMG ?= localhost:5001/cluster-api-provider-gardener/controller:latest
 GARDENER_KUBECONFIG ?= ./bin/gardener/example/provider-local/seed-kind/base/kubeconfig
-GARDENER_DIR ?= $(shell go mod tidy && go list -m -f '{{.Dir}}' github.com/gardener/gardener)
+GARDENER_DIR ?= $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener)
+
+#########################################
+# Tools                                 #
+#########################################
+
+TOOLS_DIR := $(HACK_DIR)/tools
+include $(GARDENER_HACK_DIR)/tools.mk
+
+#################################################################
+# Rules related to binary build, Docker image build and release #
+#################################################################
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -48,21 +64,21 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: verify-extended
-verify-extended: check lint-config test ## Generate and reformat code, run tests
+verify-extended: check lint-config test sast-report ## Generate and reformat code, run tests
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd:allowDangerousTypes=true webhook paths="./api/...;./cmd/...;./internal/..." output:crd:artifacts:config=config/crd/bases
+manifests: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	@controller-gen rbac:roleName=manager-role crd:allowDangerousTypes=true webhook paths="./api/...;./cmd/...;./internal/..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: deepcopy
-deepcopy: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/LICENSE_BOILERPLATE.txt" paths="./api/...;./cmd/...;./internal/..."
+deepcopy: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	@controller-gen object:headerFile="hack/LICENSE_BOILERPLATE.txt" paths="./api/...;./cmd/...;./internal/..."
 
 .PHONY: generate
-generate: controller-gen manifests deepcopy fmt lint-fix format vet ## Generate and reformat code.
+generate: manifests deepcopy fmt lint-fix format vet ## Generate and reformat code.
 
 .PHONY: check
-check: generate ## Run generators, formatters and linters and check whether files have been modified.
+check: generate sast ## Run generators, formatters and linters and check whether files have been modified.
 	@git diff --quiet || ( echo "Files have been modified. Need to run 'make generate'." && exit 1 )
 
 .PHONY: fmt
@@ -82,8 +98,8 @@ test: setup-envtest ## Run tests.
 # CertManager is installed by default; skip with:
 # - CERT_MANAGER_INSTALL_SKIP=true
 .PHONY: test-e2e
-test-e2e: kind ## Run the e2e tests. Expected an isolated environment using Kind.
-	$(KIND) get clusters | grep -q 'gardener' || { \
+test-e2e: $(KIND) ## Run the e2e tests. Expected an isolated environment using Kind.
+	@kind get clusters | grep -q 'gardener' || { \
 		echo "No Kind cluster is running. Please start a Kind cluster before running the e2e tests."; \
 		exit 1; \
 	}
@@ -101,20 +117,28 @@ clusterctl-init: clusterctl
 ci-e2e-kind: kind-gardener-up clusterctl-init test-e2e
 
 .PHONY: format
-format: goimports goimports-reviser ## Format imports.
+format: $(GOIMPORTS) $(GOIMPORTSREVISER) ## Format imports.
 	@./hack/format.sh ./api ./cmd ./internal ./test
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter
-	$(GOLANGCI_LINT) run --timeout 10m
+lint: $(GOLANGCI_LINT) ## Run golangci-lint linter
+	@golangci-lint run --timeout 10m
 
 .PHONY: lint-fix
-lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
-	$(GOLANGCI_LINT) run --fix --timeout 10m
+lint-fix: $(GOLANGCI_LINT) ## Run golangci-lint linter and perform fixes
+	@golangci-lint run --fix --timeout 10m
 
 .PHONY: lint-config
-lint-config: golangci-lint ## Verify golangci-lint linter configuration
-	$(GOLANGCI_LINT) config verify
+lint-config: $(GOLANGCI_LINT) ## Verify golangci-lint linter configuration
+	@golangci-lint config verify
+
+.PHONY: sast
+sast: $(GOSEC)
+	@bash $(GARDENER_HACK_DIR)/sast.sh --exclude-dirs hack,gardener
+
+.PHONY: sast-report
+sast-report: $(GOSEC)
+	@bash $(GARDENER_HACK_DIR)/sast.sh --exclude-dirs hack,gardener --gosec-report true
 
 ##@ Build
 
@@ -155,10 +179,10 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	rm Dockerfile.cross
 
 .PHONY: build-installer
-build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
+build-installer: manifests generate $(KUSTOMIZE) ## Generate a consolidated YAML with CRDs and deployment.
 	mkdir -p dist
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default > dist/install.yaml
+	cd config/manager && kustomize edit set image controller=${IMG}
+	@kustomize build config/default > dist/install.yaml
 
 ##@ Deployment
 
@@ -167,28 +191,28 @@ ifndef ignore-not-found
 endif
 
 .PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | $(KUBECTL) apply -f -
+install: manifests $(KUSTOMIZE) $(KUBECTL) ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	@kustomize build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
+uninstall: manifests $(KUSTOMIZE) $(KUBECTL) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	@kustomize build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests kustomize envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests $(KUSTOMIZE) envsubst $(KUBECTL) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(eval B64_GARDENER_KUBECONFIG_ENV := $(shell ./hack/gardener-kubeconfig.sh $(GARDENER_KUBECONFIG)))
-	@cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	@$(KUSTOMIZE) build config/overlays/dev | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | $(KUBECTL) apply -f -
+	@cd config/manager && kustomize edit set image controller=${IMG}
+	@kustomize build config/overlays/dev | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | kubectl apply -f -
 
 .PHONY: deploy-kcp
-deploy-kcp: manifests kustomize envsubst ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy-kcp: manifests $(KUSTOMIZE) envsubst $(KUBECTL) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(eval B64_GARDENER_KUBECONFIG_ENV := $(shell ./hack/gardener-kubeconfig.sh $(GARDENER_KUBECONFIG)))
-	@cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	@$(KUSTOMIZE) build config/overlays/kcp | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | $(KUBECTL) apply -f -
+	@cd config/manager && @kustomize edit set image controller=${IMG}
+	@kustomize build config/overlays/kcp | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | kubectl apply -f -
 
 .PHONY: undeploy
-undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
+undeploy: $(KUSTOMIZE) $(KUBECTL) ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	@kustomize build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Dependencies
 
@@ -200,54 +224,16 @@ $(LOCALBIN):
 export PATH := $(abspath $(LOCALBIN)):$(PATH)
 
 ## Tool Binaries
-KUBECTL ?= kubectl
-KIND ?= $(LOCALBIN)/kind
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
-CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
-GOIMPORTS ?= $(LOCALBIN)/goimports
-GOIMPORTS_REVISER ?= $(LOCALBIN)/goimports-reviser
 ENVTEST ?= $(LOCALBIN)/setup-envtest
-GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 CLUSTERCTL ?= $(LOCALBIN)/clusterctl
 GARDENER ?= $(LOCALBIN)/gardener
 
 ## Tool Versions
-KIND_VERSION ?= v0.29.0
-KUSTOMIZE_VERSION ?= v5.5.0
-CONTROLLER_TOOLS_VERSION ?= v0.17.2
-GOIMPORTS_VERSION ?= v0.31.0
-GOIMPORTS_REVISER_VERSION ?= v3.9.1
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
-GOLANGCI_LINT_VERSION ?= v2.1.6
 CLUSTERCTL_VERSION ?= v1.9.6
-
-.PHONY: kind
-kind: $(KIND) ## Download kustomize locally if necessary.
-$(KIND): $(LOCALBIN)
-	$(call go-install-tool,$(KIND),sigs.k8s.io/kind/cmd/kind,$(KIND_VERSION))
-
-.PHONY: kustomize
-kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
-$(KUSTOMIZE): $(LOCALBIN)
-	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
-
-.PHONY: controller-gen
-controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN): $(LOCALBIN)
-	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen,$(CONTROLLER_TOOLS_VERSION))
-
-.PHONY: goimports
-goimports: $(GOIMPORTS) ## Download goimports locally if necessary.
-$(GOIMPORTS): $(LOCALBIN)
-	$(call go-install-tool,$(GOIMPORTS),golang.org/x/tools/cmd/goimports,$(GOIMPORTS_VERSION))
-
-.PHONY: goimports-reviser
-goimports-reviser: $(GOIMPORTS_REVISER) ## Download goimports-reviser locally if necessary.
-$(GOIMPORTS_REVISER): $(LOCALBIN)
-	$(call go-install-tool,$(GOIMPORTS_REVISER),github.com/incu6us/goimports-reviser/v3,$(GOIMPORTS_REVISER_VERSION))
 
 .PHONY: setup-envtest
 setup-envtest: envtest ## Download the binaries required for ENVTEST in the local bin directory.
@@ -266,11 +252,6 @@ $(ENVTEST): $(LOCALBIN)
 envsubst:
 	@which envsubst > /dev/null 2>&1 && echo "Found envsubst: $$(which envsubst)" || \
 		{ apt update && apt install -y gettext && echo "Successfully installed gettext for envsubst" || (echo "envsubst is not available. Please install GNU gettext to use envsubst."; exit 1); }
-
-.PHONY: golangci-lint
-golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
-$(GOLANGCI_LINT): $(LOCALBIN)
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint,$(GOLANGCI_LINT_VERSION))
 
 .PHONY: clusterctl
 clusterctl: $(CLUSTERCTL) ## Download clusterctl locally if necessary.
