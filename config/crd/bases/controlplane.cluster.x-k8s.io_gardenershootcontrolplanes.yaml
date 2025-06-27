@@ -280,7 +280,7 @@ spec:
                   properties:
                     disabled:
                       description: Disabled allows to disable extensions that were
-                        marked as 'globally enabled' by Gardener administrators.
+                        marked as 'automatically enabled' by Gardener administrators.
                       type: boolean
                     providerConfig:
                       description: ProviderConfig is the configuration passed to extension
@@ -319,10 +319,17 @@ spec:
                         items:
                           type: string
                         type: array
+                      maxDrainParallelism:
+                        description: |-
+                          MaxDrainParallelism specifies the maximum number of nodes needing drain, that can be drained and deleted in parallel.
+                          Default: 1
+                        format: int32
+                        type: integer
                       maxEmptyBulkDelete:
-                        description: 'MaxEmptyBulkDelete specifies the maximum number
-                          of empty nodes that can be deleted at the same time (default:
-                          10).'
+                        description: |-
+                          MaxEmptyBulkDelete specifies the maximum number of empty nodes that can be deleted at the same time (default: MaxScaleDownParallelism when that is set).
+                          Deprecated: This field is deprecated and will be removed once gardener drops support for Kubernetes v1.32.
+                          This cluster-autoscaler field is deprecated upstream, use --max-scale-down-parallelism instead.
                         format: int32
                         type: integer
                       maxGracefulTerminationSeconds:
@@ -335,6 +342,12 @@ spec:
                         description: 'MaxNodeProvisionTime defines how long CA waits
                           for node to be provisioned (default: 20 mins).'
                         type: string
+                      maxScaleDownParallelism:
+                        description: |-
+                          MaxScaleDownParallelism specifies the maximum number of nodes (both empty and needing drain) that can be deleted in parallel.
+                          Default: 10 or MaxEmptyBulkDelete when that is set
+                        format: int32
+                        type: integer
                       newPodScaleUpDelay:
                         description: 'NewPodScaleUpDelay specifies how long CA should
                           ignore newly created pods before they have to be considered
@@ -583,6 +596,10 @@ spec:
                           EnableAnonymousAuthentication defines whether anonymous requests to the secure port
                           of the API server should be allowed (flag `--anonymous-auth`).
                           See: https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+
+                          Deprecated: This field is deprecated and will be removed in a future release.
+                          Please use anonymous authentication configuration instead.
+                          For more information see: https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-authenticator-configuration
                         type: boolean
                       encryptionConfig:
                         description: EncryptionConfig contains customizable encryption
@@ -1169,6 +1186,16 @@ spec:
                           Default: 40
                         format: int32
                         type: integer
+                      imageMaximumGCAge:
+                        description: |-
+                          ImageMaximumGCAge is the maximum age of an unused image before it can be garbage collected.
+                          Default: 0s
+                        type: string
+                      imageMinimumGCAge:
+                        description: |-
+                          ImageMinimumGCAge is the minimum age of an unused image before it can be garbage collected.
+                          Default: 2m0s
+                        type: string
                       kubeReserved:
                         description: |-
                           KubeReserved is the configuration for resources reserved for kubernetes node components (mainly kubelet and container runtime).
@@ -1204,6 +1231,14 @@ spec:
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             x-kubernetes-int-or-string: true
                         type: object
+                      maxParallelImagePulls:
+                        description: |-
+                          MaxParallelImagePulls describes the maximum number of image pulls in parallel. The value must be a positive number.
+                          This field cannot be set if SerializeImagePulls (pull one image at a time) is set to true.
+                          Setting it to nil means no limit.
+                          Default: nil
+                        format: int32
+                        type: integer
                       maxPods:
                         description: |-
                           MaxPods is the maximum number of Pods that are allowed by the Kubelet.
@@ -2047,7 +2082,7 @@ spec:
                             type: array
                           manualInPlaceUpdate:
                             description: ManualInPlaceUpdate contains the names of
-                              the pending worker pools with strategy ManualInPlaceUpdate..
+                              the pending worker pools with strategy ManualInPlaceUpdate.
                             items:
                               type: string
                             type: array
