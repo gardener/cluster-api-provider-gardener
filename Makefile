@@ -206,10 +206,10 @@ deploy: manifests $(KUSTOMIZE) envsubst $(KUBECTL) ## Deploy controller to the K
 	@kustomize build config/overlays/dev | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | kubectl apply -f -
 
 .PHONY: deploy-prod
-deploy-prod: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy-prod: manifests $(KUSTOMIZE) $(KUBECTL) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(eval B64_GARDENER_KUBECONFIG_ENV := $(shell ./hack/gardener-kubeconfig.sh $(GARDENER_KUBECONFIG)))
-	@cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	@$(KUSTOMIZE) build config/default | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | $(KUBECTL) apply -f -
+	@cd config/manager && kustomize edit set image controller=${IMG}
+	@kustomize build config/default | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | kubectl apply -f -
 
 
 .PHONY: deploy-kcp
