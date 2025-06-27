@@ -7,7 +7,7 @@ It features two methods of deployment:
 - **KCP**: The KCP-aware way to run the controllers against a KCP server.
 
 You can find the documentation for both deployment scenarios respectively:
-- [CAPI](./docs/capi/README.md)
-- [KCP](./docs/kcp/README.md)
+- [CAPI](./capi/README.md)
+- [KCP](./kcp/README.md)
 
 # [Testing 🧪](./testing.md)
