@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v250508-284c602.gardenershootcontrolplanes.controlplane.cluster.x-k8s.io
+  name: v250630-c3f80ee.gardenershootcontrolplanes.controlplane.cluster.x-k8s.io
 spec:
   group: controlplane.cluster.x-k8s.io
   names:
@@ -273,7 +273,7 @@ spec:
                 extensions.
               items:
                 description: Extension contains type and provider information for
-                  Shoot extensions.
+                  extensions.
                 properties:
                   disabled:
                     description: Disabled allows to disable extensions that were marked
@@ -2017,6 +2017,28 @@ spec:
                   description: IsHibernated indicates whether the Shoot is currently
                     hibernated.
                   type: boolean
+                inPlaceUpdates:
+                  description: InPlaceUpdates contains information about in-place
+                    updates for the Shoot workers.
+                  properties:
+                    pendingWorkerUpdates:
+                      description: PendingWorkerUpdates contains information about
+                        worker pools pending in-place updates.
+                      properties:
+                        autoInPlaceUpdate:
+                          description: AutoInPlaceUpdate contains the names of the
+                            pending worker pools with strategy AutoInPlaceUpdate.
+                          items:
+                            type: string
+                          type: array
+                        manualInPlaceUpdate:
+                          description: ManualInPlaceUpdate contains the names of the
+                            pending worker pools with strategy ManualInPlaceUpdate..
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                  type: object
                 lastErrors:
                   description: LastErrors holds information about the last occurred
                     error(s) during an operation.
