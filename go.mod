@@ -6,7 +6,7 @@ replace sigs.k8s.io/controller-runtime => github.com/kcp-dev/controller-runtime 
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/gardener/gardener v1.121.2
+	github.com/gardener/gardener v1.121.3
 	github.com/kcp-dev/kcp/sdk v0.27.1
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
