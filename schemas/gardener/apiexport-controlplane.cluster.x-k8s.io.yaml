@@ -4,9 +4,9 @@ metadata:
   name: controlplane.cluster.x-k8s.io
 spec:
   latestResourceSchemas:
-    - v250630-c3f80ee.gardenershootcontrolplanes.controlplane.cluster.x-k8s.io
-    - v250630-c3f80ee.gardenerworkerpools.infrastructure.cluster.x-k8s.io
-    - v250630-c3f80ee.gardenershootclusters.infrastructure.cluster.x-k8s.io
+    - gardenershootcontrolplanes.controlplane.cluster.x-k8s.io
+    - gardenerworkerpools.infrastructure.cluster.x-k8s.io
+    - gardenershootclusters.infrastructure.cluster.x-k8s.io
     # CAPI resources for mock controller
     - v250508-9fbc50a43.clusters.cluster.x-k8s.io
     - v250508-9fbc50a43.machinepools.cluster.x-k8s.io
