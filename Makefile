@@ -75,8 +75,12 @@ deepcopy: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, 
 	@controller-gen object:headerFile="hack/LICENSE_BOILERPLATE.txt" paths="./api/...;./cmd/...;./internal/..."
 
 .PHONY: generate
-generate: manifests deepcopy fmt lint-fix format vet $(YQ) ## Generate and reformat code.
+generate: manifests deepcopy fmt lint-fix format vet generate-schemas $(YQ) ## Generate and reformat code.
 	@./hack/generate-renovate-ignore-deps.sh
+
+.PHONY: generate-schemas
+generate-schemas: apigen $(YQ) ## Generate OpenAPI schemas.
+	@./hack/generate-schemas.sh ${REPO_ROOT}
 
 .PHONY: check
 check: generate sast ## Run generators, formatters and linters and check whether files have been modified.
@@ -235,6 +239,7 @@ export PATH := $(abspath $(LOCALBIN)):$(PATH)
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CLUSTERCTL ?= $(LOCALBIN)/clusterctl
 GARDENER ?= $(LOCALBIN)/gardener
+APIGEN ?= $(LOCALBIN)/apigen
 
 ## Tool Versions
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
@@ -242,6 +247,7 @@ ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller
 #ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
 ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
 CLUSTERCTL_VERSION ?= v1.9.6
+APIGEN_VERSION ?= v0.27.1
 
 .PHONY: setup-envtest
 setup-envtest: envtest ## Download the binaries required for ENVTEST in the local bin directory.
@@ -270,6 +276,11 @@ $(CLUSTERCTL): $(LOCALBIN)
 gardener: $(GARDENER) $(GARDENER_DIR) ## Copy gardener locally if necessary.
 $(GARDENER): $(LOCALBIN)
 	@[ -d $(GARDENER) ] || cp -r $(GARDENER_DIR) $(GARDENER)
+
+.PHONY: apigen
+apigen: $(APIGEN) ## Download apigen locally if necessary.
+$(APIGEN): $(LOCALBIN)
+	$(call go-install-tool,$(APIGEN),github.com/kcp-dev/kcp/sdk/cmd/apigen,$(APIGEN_VERSION))
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
