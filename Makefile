@@ -243,7 +243,7 @@ APIGEN ?= $(LOCALBIN)/apigen
 
 ## Tool Versions
 # renovate: datasource=github-releases depName=kubernetes-sigs/controller-runtime
-ENVTEST_VERSION ?= v0.20.4
+ENVTEST_VERSION ?= v0.21.0
 # renovate: datasource=github-tags depName=kubernetes/api
 ENVTEST_K8S_VERSION ?= v0.32.6
 # renovate: datasource=github-releases depName=kubernetes-sigs/cluster-api
