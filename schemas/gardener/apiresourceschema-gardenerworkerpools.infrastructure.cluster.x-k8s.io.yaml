@@ -67,6 +67,89 @@ spec:
                 description: |-
                   ControlPlane specifies that the shoot cluster control plane components should be running in this worker pool.
                   This is only relevant for autonomous shoot clusters.
+                properties:
+                  backup:
+                    description: |-
+                      Backup holds the object store configuration for the backups of shoot (currently only etcd).
+                      If it is not specified, then there won't be any backups taken.
+                    properties:
+                      credentialsRef:
+                        description: |-
+                          CredentialsRef is reference to a resource holding the credentials used for
+                          authentication with the object store service where the backups are stored.
+                          Supported referenced resources are v1.Secrets and
+                          security.gardener.cloud/v1alpha1.WorkloadIdentity
+                        properties:
+                          apiVersion:
+                            description: API version of the referent.
+                            type: string
+                          fieldPath:
+                            description: |-
+                              If referring to a piece of an object instead of an entire object, this string
+                              should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                              For example, if the object reference is to a container within a pod, this would take on a value like:
+                              "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                              the event) or if no container name is specified "spec.containers[2]" (container with
+                              index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                              referencing a part of an object.
+                            type: string
+                          kind:
+                            description: |-
+                              Kind of the referent.
+                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                            type: string
+                          name:
+                            description: |-
+                              Name of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            type: string
+                          namespace:
+                            description: |-
+                              Namespace of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                            type: string
+                          resourceVersion:
+                            description: |-
+                              Specific resourceVersion to which this reference is made, if any.
+                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                            type: string
+                          uid:
+                            description: |-
+                              UID of the referent.
+                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      provider:
+                        description: Provider is a provider name. This field is immutable.
+                        type: string
+                      providerConfig:
+                        description: ProviderConfig is the configuration passed to BackupBucket resource.
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      region:
+                        description: Region is a region name. This field is immutable.
+                        type: string
+                      secretRef:
+                        description: |-
+                          SecretRef is a reference to a Secret object containing the cloud provider credentials for
+                          the object store where backups should be stored. It should have enough privileges to manipulate
+                          the objects as well as buckets.
+                          Deprecated: This field will be removed after v1.121.0 has been released. Use `CredentialsRef` instead.
+                          Until removed, this field is synced with the `CredentialsRef` field when it refers to a secret.
+                        properties:
+                          name:
+                            description: name is unique within a namespace to reference a secret resource.
+                            type: string
+                          namespace:
+                            description: namespace defines the space within which the secret name must be unique.
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                    required:
+                      - provider
+                      - secretRef
+                    type: object
                 type: object
               cri:
                 description: |-
@@ -297,6 +380,16 @@ spec:
                           Default: 40
                         format: int32
                         type: integer
+                      imageMaximumGCAge:
+                        description: |-
+                          ImageMaximumGCAge is the maximum age of an unused image before it can be garbage collected.
+                          Default: 0s
+                        type: string
+                      imageMinimumGCAge:
+                        description: |-
+                          ImageMinimumGCAge is the minimum age of an unused image before it can be garbage collected.
+                          Default: 2m0s
+                        type: string
                       kubeReserved:
                         description: |-
                           KubeReserved is the configuration for resources reserved for kubernetes node components (mainly kubelet and container runtime).
@@ -332,6 +425,14 @@ spec:
                             pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                             x-kubernetes-int-or-string: true
                         type: object
+                      maxParallelImagePulls:
+                        description: |-
+                          MaxParallelImagePulls describes the maximum number of image pulls in parallel. The value must be a positive number.
+                          This field cannot be set if SerializeImagePulls (pull one image at a time) is set to true.
+                          Setting it to nil means no limit.
+                          Default: nil
+                        format: int32
+                        type: integer
                       maxPods:
                         description: |-
                           MaxPods is the maximum number of Pods that are allowed by the Kubelet.
