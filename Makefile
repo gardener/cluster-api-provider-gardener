@@ -79,7 +79,7 @@ generate: manifests deepcopy fmt lint-fix format vet generate-schemas $(YQ) ## G
 	@./hack/generate-renovate-ignore-deps.sh
 
 .PHONY: generate-schemas
-generate-schemas: $(APIGEN) $(YQ) ## Generate OpenAPI schemas.
+generate-schemas: apigen $(YQ) ## Generate OpenAPI schemas.
 	@./hack/generate-schemas.sh ${REPO_ROOT}
 
 .PHONY: check
