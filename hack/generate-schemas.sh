@@ -22,7 +22,7 @@ done
 echo "🔄 Replacing old Gardener APIResourceSchemas"
 cp ${new_schema_files} ${REPO_ROOT}/schemas/gardener
 
-echo "📂 Copy relevant CAPI CRDs"
+echo "📂 Copying relevant CAPI CRDs"
 mkdir -p ${TMP_DIR}/capi
 cp ${CAPI_DIR}/config/crd/bases/cluster.x-k8s.io_clusters.yaml ${TMP_DIR}/capi -f
 cp ${CAPI_DIR}/config/crd/bases/cluster.x-k8s.io_machinepools.yaml ${TMP_DIR}/capi -f

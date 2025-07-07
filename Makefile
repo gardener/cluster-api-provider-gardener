@@ -287,7 +287,7 @@ $(GARDENER): $(LOCALBIN)
 	@[ -d $(GARDENER) ] || cp -r $(GARDENER_DIR) $(GARDENER)
 
 .PHONY: capi
-gardener: $(CAPI) $(CAPI_DIR) ## Copy gardener locally if necessary.
+capi: $(CAPI) $(CAPI_DIR) ## Copy capi locally if necessary.
 $(CAPI): $(LOCALBIN)
 	@[ -d $(CAPI) ] || cp -r $(CAPI_DIR) $(CAPI)
 
