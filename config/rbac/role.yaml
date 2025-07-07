@@ -21,11 +21,26 @@ rules:
   resources:
   - clusters
   - clusters/status
-  - machinepools
   verbs:
   - get
   - list
   - watch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - machinepools
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - machinepools/status
+  verbs:
+  - get
+  - update
 - apiGroups:
   - controlplane.cluster.x-k8s.io
   resources:
