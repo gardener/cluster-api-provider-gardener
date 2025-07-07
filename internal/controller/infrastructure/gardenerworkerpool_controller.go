@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"sigs.k8s.io/cluster-api/exp/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,7 +46,8 @@ type GardenerWorkerPoolReconciler struct {
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=gardenerworkerpools,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=gardenerworkerpools/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=gardenerworkerpools/finalizers,verbs=update
-// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinepools,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinepools,verbs=get;update;list;watch
+// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=machinepools/status,verbs=get;update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -100,7 +102,7 @@ func (r *GardenerWorkerPoolReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return r.reconcileDelete()
 	}
 
-	return r.reconcile(ctx, workerPool, cluster)
+	return r.reconcile(ctx, workerPool, machinePool, cluster)
 }
 
 func (r *GardenerWorkerPoolReconciler) syncSpecs(ctx context.Context, workerPool *infrastructurev1alpha1.GardenerWorkerPool, cluster *clusterv1beta1.Cluster) error {
@@ -186,11 +188,8 @@ func createClientFromKubeconfig(kubeconfig []byte, scheme *runtime.Scheme) (clie
 	return k8sClient, nil
 }
 
-func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, workerPool *infrastructurev1alpha1.GardenerWorkerPool, cluster *clusterv1beta1.Cluster) error {
+func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *v1beta1.MachinePool, cluster *clusterv1beta1.Cluster) error {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "updateStatus")
-	// TODO(tobschli): Get nodes and look for the pool name in the labels "worker.gardener.cloud/pool"
-	//  find the const for it
-	//  get the providerID and put it in the providerIDList
 
 	// Get the secret for the shoot cluster to get the nodes
 	secret := &corev1.Secret{
@@ -251,10 +250,16 @@ func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, workerP
 		return err
 	}
 
+	machinePool.Status.Replicas = int32(len(workerPool.Spec.ProviderIDList)) // #nosec G115
+	if err := r.Client.Status().Update(ctx, machinePool); err != nil {
+		log.Error(err, "Failed to update MachinePool replicas")
+		return err
+	}
+
 	return nil
 }
 
-func (r *GardenerWorkerPoolReconciler) reconcile(ctx context.Context, workerPool *infrastructurev1alpha1.GardenerWorkerPool, cluster *clusterv1beta1.Cluster) (ctrl.Result, error) {
+func (r *GardenerWorkerPoolReconciler) reconcile(ctx context.Context, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *v1beta1.MachinePool, cluster *clusterv1beta1.Cluster) (ctrl.Result, error) {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "reconcile")
 	if err := r.syncSpecs(ctx, workerPool, cluster); err != nil {
 		log.Error(err, "Failed to sync GardenerWorkerPool spec")
@@ -262,7 +267,7 @@ func (r *GardenerWorkerPoolReconciler) reconcile(ctx context.Context, workerPool
 	}
 
 	if r.PrioritizeShoot {
-		if err := r.updateStatus(ctx, workerPool, cluster); err != nil {
+		if err := r.updateStatus(ctx, workerPool, machinePool, cluster); err != nil {
 			log.Error(err, "Failed to update GardenerWorkerPool status")
 			return ctrl.Result{}, err
 		}
