@@ -59,7 +59,7 @@ You can apply one of the samples from the `config/samples`:
 
 Let's create a simple `Shoot` cluster: 🌱
 ```sh
-kubectl apply -k config/samples/workerful
+kubectl apply -f config/samples/workerful.yaml
 ```
 
 ## To Uninstall 🧹
