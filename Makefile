@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ENSURE_GARDENER_MOD         := $(shell go get github.com/gardener/gardener@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener))
+ENSURE_CAPI_MOD         := $(shell go get sigs.k8s.io/cluster-api@$$(go list -m -f "{{.Version}}" sigs.k8s.io/cluster-api))
 GARDENER_HACK_DIR           := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 HACK_DIR                    := $(REPO_ROOT)/hack
@@ -11,6 +12,7 @@ HACK_DIR                    := $(REPO_ROOT)/hack
 IMG ?= localhost:5001/cluster-api-provider-gardener/controller:latest
 GARDENER_KUBECONFIG ?= ./bin/gardener/example/provider-local/seed-kind/base/kubeconfig
 GARDENER_DIR ?= $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener)
+CAPI_DIR ?= $(shell go list -m -f '{{.Dir}}' sigs.k8s.io/cluster-api)
 
 #########################################
 # Tools                                 #
@@ -79,8 +81,8 @@ generate: manifests deepcopy fmt lint-fix format vet generate-schemas $(YQ) ## G
 	@./hack/generate-renovate-ignore-deps.sh
 
 .PHONY: generate-schemas
-generate-schemas: apigen $(YQ) ## Generate OpenAPI schemas.
-	@./hack/generate-schemas.sh ${REPO_ROOT}
+generate-schemas: apigen $(YQ) $(CAPI) ## Generate OpenAPI schemas.
+	@./hack/generate-schemas.sh ${REPO_ROOT} ${CAPI_DIR}
 
 .PHONY: check
 check: generate sast ## Run generators, formatters and linters and check whether files have been modified.
@@ -239,6 +241,7 @@ export PATH := $(abspath $(LOCALBIN)):$(PATH)
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 CLUSTERCTL ?= $(LOCALBIN)/clusterctl
 GARDENER ?= $(LOCALBIN)/gardener
+CAPI ?= $(LOCALBIN)/capi
 APIGEN ?= $(LOCALBIN)/apigen
 
 ## Tool Versions
@@ -282,6 +285,11 @@ $(CLUSTERCTL): $(LOCALBIN)
 gardener: $(GARDENER) $(GARDENER_DIR) ## Copy gardener locally if necessary.
 $(GARDENER): $(LOCALBIN)
 	@[ -d $(GARDENER) ] || cp -r $(GARDENER_DIR) $(GARDENER)
+
+.PHONY: capi
+capi: $(CAPI) $(CAPI_DIR) ## Copy capi locally if necessary.
+$(CAPI): $(LOCALBIN)
+	@[ -d $(CAPI) ] || cp -r $(CAPI_DIR) $(CAPI)
 
 .PHONY: apigen
 apigen: $(APIGEN) ## Download apigen locally if necessary.
