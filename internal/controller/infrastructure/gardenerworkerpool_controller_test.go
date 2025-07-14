@@ -13,6 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	infrastructurev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/infrastructure/v1alpha1"
 )
@@ -56,12 +58,15 @@ var _ = Describe("GardenerWorkerPool Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &GardenerWorkerPoolReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+				Manager: mgr,
+				Scheme:  k8sClient.Scheme(),
 			}
 
-			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespacedName,
+			_, err := controllerReconciler.Reconcile(ctx, mcreconcile.Request{
+				Request: reconcile.Request{
+					NamespacedName: typeNamespacedName,
+				},
+				ClusterName: mcmanager.LocalCluster,
 			})
 			Expect(err).NotTo(HaveOccurred())
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
