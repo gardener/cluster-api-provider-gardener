@@ -17,7 +17,7 @@ apigen --input-dir ${REPO_ROOT}/config/crd/bases --output-dir ${TMP_DIR}
 new_schema_files=$(find ${TMP_DIR} -type f | grep -E 'apiresourceschema.*\.yaml$')
 
 for schema_file in ${new_schema_files}; do
-  yq eval '.metadata.name |= sub("^v[0-9]+-[a-f0-9]+\.", "")' "${schema_file}" -i -P
+  yq eval '.metadata.name |= sub("^v[0-9]+-[a-f0-9]+\.", "generated.")' "${schema_file}" -i -P
 done
 echo "🔄 Replacing old Gardener APIResourceSchemas"
 cp ${new_schema_files} ${REPO_ROOT}/schemas/gardener
@@ -37,7 +37,7 @@ apigen --input-dir ${TMP_DIR}/capi --output-dir ${TMP_DIR}/capi
 
 new_capi_schema_files=$(find ${TMP_DIR} -type f | grep -E 'apiresourceschema.*\.yaml$')
 for schema_file in ${new_capi_schema_files}; do
-  yq eval '.metadata.name |= sub("^v[0-9]+-[a-f0-9]+\.", "")' "${schema_file}" -i -P
+  yq eval '.metadata.name |= sub("^v[0-9]+-[a-f0-9]+\.", "generated.")' "${schema_file}" -i -P
 done
 
 echo "🔄 Replacing old CAPI APIResourceSchemas"

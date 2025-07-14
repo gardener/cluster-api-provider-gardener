@@ -2,7 +2,7 @@ apiVersion: apis.kcp.io/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: clusters.cluster.x-k8s.io
+  name: generated.clusters.cluster.x-k8s.io
 spec:
   group: cluster.x-k8s.io
   names:
