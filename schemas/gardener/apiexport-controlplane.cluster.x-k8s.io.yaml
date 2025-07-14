@@ -4,12 +4,12 @@ metadata:
   name: controlplane.cluster.x-k8s.io
 spec:
   latestResourceSchemas:
-    - gardenershootcontrolplanes.controlplane.cluster.x-k8s.io
-    - gardenerworkerpools.infrastructure.cluster.x-k8s.io
-    - gardenershootclusters.infrastructure.cluster.x-k8s.io
+    - generated.gardenershootcontrolplanes.controlplane.cluster.x-k8s.io
+    - generated.gardenerworkerpools.infrastructure.cluster.x-k8s.io
+    - generated.gardenershootclusters.infrastructure.cluster.x-k8s.io
     # CAPI resources for mock controller
-    - clusters.cluster.x-k8s.io
-    - machinepools.cluster.x-k8s.io
+    - generated.clusters.cluster.x-k8s.io
+    - generated.machinepools.cluster.x-k8s.io
   permissionClaims:
     - group: ""
       resource: "secrets"

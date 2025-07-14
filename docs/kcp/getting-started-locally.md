@@ -16,6 +16,8 @@
 > For our quick-start, we use `:root:gardener` as our provider-workspace. 🗂️
 ```shell
 kubectl create workspace gardener --enter
+# starting from kubectl v1.33 on:
+kubectl create-workspace gardener --enter
 ```
 
 **Create `APIResourceSchema`s, `APIExport` and `APIBinding` in provider-workspace:**
