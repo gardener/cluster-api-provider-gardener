@@ -24,10 +24,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	controllerRuntimeCluster "sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	infrastructurev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/infrastructure/v1alpha1"
 	providerutil "github.com/gardener/cluster-api-provider-gardener/internal/util"
@@ -35,11 +37,10 @@ import (
 
 // GardenerWorkerPoolReconciler reconciles a GardenerWorkerPool object
 type GardenerWorkerPoolReconciler struct {
-	Client         client.Client
-	GardenerClient client.Client
-	Scheme         *runtime.Scheme
-	IsKCP          bool
-
+	Manager         mcmanager.Manager
+	GardenerClient  client.Client
+	IsKCP           bool
+	Scheme          *runtime.Scheme
 	PrioritizeShoot bool
 }
 
@@ -58,12 +59,18 @@ type GardenerWorkerPoolReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/reconcile
-func (r *GardenerWorkerPoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *GardenerWorkerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
 	log := runtimelog.FromContext(ctx).WithValues("gardenerworkerpool", req.NamespacedName, "cluster", req.ClusterName)
 	log.Info("Reconciling GardenerWorkerPool")
 
+	cl, err := r.Manager.GetCluster(ctx, req.ClusterName)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to get cluster: %w", err)
+	}
+	c := cl.GetClient()
+
 	workerPool := &infrastructurev1alpha1.GardenerWorkerPool{}
-	if err := r.Client.Get(ctx, req.NamespacedName, workerPool); err != nil {
+	if err := c.Get(ctx, req.NamespacedName, workerPool); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("GardenerWorkerPool not found or already deleted")
 			return ctrl.Result{}, nil
@@ -73,7 +80,7 @@ func (r *GardenerWorkerPoolReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	log.Info("Getting owning MachinePool")
-	machinePool, err := providerutil.GetMachinePoolForWorkerPool(ctx, r.Client, workerPool)
+	machinePool, err := providerutil.GetMachinePoolForWorkerPool(ctx, c, workerPool)
 	if err != nil {
 		log.Error(err, "Failed to get MachinePool for GardenerWorkerPool")
 		return ctrl.Result{}, err
@@ -84,7 +91,7 @@ func (r *GardenerWorkerPoolReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	log.Info("Getting own cluster")
-	cluster, err := util.GetOwnerCluster(ctx, r.Client, machinePool.ObjectMeta)
+	cluster, err := util.GetOwnerCluster(ctx, c, machinePool.ObjectMeta)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -102,13 +109,13 @@ func (r *GardenerWorkerPoolReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return r.reconcileDelete()
 	}
 
-	return r.reconcile(ctx, workerPool, machinePool, cluster)
+	return r.reconcile(ctx, c, workerPool, machinePool, cluster)
 }
 
-func (r *GardenerWorkerPoolReconciler) syncSpecs(ctx context.Context, workerPool *infrastructurev1alpha1.GardenerWorkerPool, cluster *clusterv1beta1.Cluster) error {
+func (r *GardenerWorkerPoolReconciler) syncSpecs(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, cluster *clusterv1beta1.Cluster) error {
 	log := runtimelog.FromContext(ctx).WithValues("gardenerworkerpool", client.ObjectKeyFromObject(workerPool), "operation", "syncSpecs")
 
-	shoot, err := providerutil.ShootFromCluster(ctx, r.GardenerClient, r.Client, cluster)
+	shoot, err := providerutil.ShootFromCluster(ctx, r.GardenerClient, c, cluster)
 	if err != nil {
 		log.Error(err, "Failed to get Shoot from Cluster")
 		return err
@@ -132,7 +139,7 @@ func (r *GardenerWorkerPoolReconciler) syncSpecs(ctx context.Context, workerPool
 			patchWorkerPool := client.MergeFrom(originalWorkerPool)
 			// patch, _ := patchWorkerPool.Data(workerPool)
 			// log.Info("Calculated patch for GardenerWorkerPool spec", "patch", string(patch))
-			if err := r.Client.Patch(ctx, workerPool, patchWorkerPool); err != nil {
+			if err := c.Patch(ctx, workerPool, patchWorkerPool); err != nil {
 				log.Error(err, "Error while syncing Gardener Shoot to GardenerWorkerPool")
 				return err
 			}
@@ -188,7 +195,7 @@ func createClientFromKubeconfig(kubeconfig []byte, scheme *runtime.Scheme) (clie
 	return k8sClient, nil
 }
 
-func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *v1beta1.MachinePool, cluster *clusterv1beta1.Cluster) error {
+func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *v1beta1.MachinePool, cluster *clusterv1beta1.Cluster) error {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "updateStatus")
 
 	// Get the secret for the shoot cluster to get the nodes
@@ -199,7 +206,7 @@ func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, workerP
 		},
 	}
 	log.Info("Retrieving Shoot Access Secret", "secret", client.ObjectKeyFromObject(secret))
-	if err := r.Client.Get(ctx, client.ObjectKeyFromObject(secret), secret); err != nil {
+	if err := c.Get(ctx, client.ObjectKeyFromObject(secret), secret); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("Shoot Access Secret not found or already deleted")
 			return nil
@@ -238,20 +245,20 @@ func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, workerP
 		}
 	}
 
-	if err := r.Client.Update(ctx, workerPool); err != nil {
+	if err := c.Update(ctx, workerPool); err != nil {
 		log.Error(err, "Failed to update GardenerWorkerPool provider IDs")
 		return err
 	}
 
 	workerPool.Status.Ready = len(workerPool.Spec.ProviderIDList) >= int(workerPool.Spec.Minimum)
 	// Update the status
-	if err := r.Client.Status().Update(ctx, workerPool); err != nil {
+	if err := c.Status().Update(ctx, workerPool); err != nil {
 		log.Error(err, "Failed to update GardenerWorkerPool readiness status")
 		return err
 	}
 
 	machinePool.Status.Replicas = int32(len(workerPool.Spec.ProviderIDList)) // #nosec G115
-	if err := r.Client.Status().Update(ctx, machinePool); err != nil {
+	if err := c.Status().Update(ctx, machinePool); err != nil {
 		log.Error(err, "Failed to update MachinePool replicas")
 		return err
 	}
@@ -259,15 +266,15 @@ func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, workerP
 	return nil
 }
 
-func (r *GardenerWorkerPoolReconciler) reconcile(ctx context.Context, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *v1beta1.MachinePool, cluster *clusterv1beta1.Cluster) (ctrl.Result, error) {
+func (r *GardenerWorkerPoolReconciler) reconcile(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *v1beta1.MachinePool, cluster *clusterv1beta1.Cluster) (ctrl.Result, error) {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "reconcile")
-	if err := r.syncSpecs(ctx, workerPool, cluster); err != nil {
+	if err := r.syncSpecs(ctx, c, workerPool, cluster); err != nil {
 		log.Error(err, "Failed to sync GardenerWorkerPool spec")
 		return ctrl.Result{}, err
 	}
 
 	if r.PrioritizeShoot {
-		if err := r.updateStatus(ctx, workerPool, machinePool, cluster); err != nil {
+		if err := r.updateStatus(ctx, c, workerPool, machinePool, cluster); err != nil {
 			log.Error(err, "Failed to update GardenerWorkerPool status")
 			return ctrl.Result{}, err
 		}
@@ -277,16 +284,17 @@ func (r *GardenerWorkerPoolReconciler) reconcile(ctx context.Context, workerPool
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *GardenerWorkerPoolReconciler) SetupWithManager(mgr ctrl.Manager, targetCluster controllerRuntimeCluster.Cluster) error {
+func (r *GardenerWorkerPoolReconciler) SetupWithManager(mgr mcmanager.Manager, targetCluster controllerRuntimeCluster.Cluster) error {
 	name := "gardenerworkerpool"
-	controller := ctrl.NewControllerManagedBy(mgr)
+	controller := mcbuilder.ControllerManagedBy(mgr)
 	if r.PrioritizeShoot {
 		controller.
 			Named(name + "-prioritized-shoot").
 			WatchesRawSource(
-				source.Kind[client.Object](targetCluster.GetCache(),
+				source.TypedKind[client.Object, mcreconcile.Request](
+					targetCluster.GetCache(),
 					&gardenercorev1beta1.Shoot{},
-					handler.EnqueueRequestsFromMapFunc(r.MapShootToGardenerWorkerPoolObject),
+					handler.TypedEnqueueRequestsFromMapFunc[client.Object, mcreconcile.Request](r.MapShootToGardenerWorkerPoolObject),
 				),
 			)
 	} else {
@@ -294,11 +302,11 @@ func (r *GardenerWorkerPoolReconciler) SetupWithManager(mgr ctrl.Manager, target
 			Named(name).
 			For(&infrastructurev1alpha1.GardenerWorkerPool{})
 	}
-	return controller.Complete(kcp.WithClusterInContext(r))
+	return controller.Complete(r)
 }
 
 // MapShootToGardenerWorkerPoolObject maps a Shoot object to a list of GardenerWorkerPool reconcile requests.
-func (r *GardenerWorkerPoolReconciler) MapShootToGardenerWorkerPoolObject(ctx context.Context, obj client.Object) []reconcile.Request {
+func (r *GardenerWorkerPoolReconciler) MapShootToGardenerWorkerPoolObject(ctx context.Context, obj client.Object) []mcreconcile.Request {
 	var (
 		log         = runtimelog.FromContext(ctx).WithValues("shoot", client.ObjectKeyFromObject(obj))
 		clusterName string
@@ -322,7 +330,7 @@ func (r *GardenerWorkerPoolReconciler) MapShootToGardenerWorkerPoolObject(ctx co
 		}
 	}
 
-	requests := []reconcile.Request{}
+	requests := []mcreconcile.Request{}
 	for key, value := range shoot.GetLabels() {
 		if !strings.HasPrefix(key, infrastructurev1alpha1.GSWReferenceNamePrefix) {
 			continue
@@ -337,11 +345,12 @@ func (r *GardenerWorkerPoolReconciler) MapShootToGardenerWorkerPoolObject(ctx co
 			continue
 		}
 
-		requests = append(requests, reconcile.Request{
+		requests = append(requests, mcreconcile.Request{Request: reconcile.Request{
 			NamespacedName: client.ObjectKey{
 				Name:      name,
 				Namespace: namespace,
 			},
+		},
 			ClusterName: clusterName,
 		})
 	}
