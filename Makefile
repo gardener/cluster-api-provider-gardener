@@ -112,6 +112,10 @@ test-e2e: $(KIND) ## Run the e2e tests. Expected an isolated environment using K
 	}
 	KUBECONFIG=$(GARDENER_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/ -v -ginkgo.v
 
+.PHONY: kcp-up
+kcp-up: kcp
+	$(KCP) start
+
 .PHONY: kind-gardener-up
 kind-gardener-up: gardener
 	@./hack/kind-gardener-up.sh $(GARDENER)
@@ -243,6 +247,7 @@ CLUSTERCTL ?= $(LOCALBIN)/clusterctl
 GARDENER ?= $(LOCALBIN)/gardener
 CAPI ?= $(LOCALBIN)/capi
 APIGEN ?= $(LOCALBIN)/apigen
+KCP ?= $(LOCALBIN)/kcp
 
 ## Tool Versions
 # renovate: datasource=github-releases depName=kubernetes-sigs/controller-runtime
@@ -253,6 +258,8 @@ ENVTEST_K8S_VERSION ?= v0.33.2
 CLUSTERCTL_VERSION ?= v1.9.9
 # renovate: datasource=github-releases depName=kcp-dev/kcp
 APIGEN_VERSION ?= v0.27.1
+# renovate: datasource=github-releases depName=kcp-dev/kcp
+KCP_VERSION ?= v0.27.1
 
 # Build ENVTEST release branch names to fetch the envtest setup script (i.e. release-0.20)
 ENVTEST_BRANCH_NAME ?= $(shell echo $(ENVTEST_VERSION) | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
@@ -295,6 +302,14 @@ $(CAPI): $(LOCALBIN)
 apigen: $(APIGEN) ## Download apigen locally if necessary.
 $(APIGEN): $(LOCALBIN)
 	$(call go-install-tool,$(APIGEN),github.com/kcp-dev/kcp/sdk/cmd/apigen,$(APIGEN_VERSION))
+
+.PHONY: kcp
+kcp: $(KCP) ## Download kcp locally if necessary.
+$(KCP): $(LOCALBIN)
+	@rm -rf $(LOCALBIN)/tmp/kcp-build
+	@git clone --depth 1 --branch $(KCP_VERSION) https://github.com/kcp-dev/kcp.git $(LOCALBIN)/tmp/kcp-build
+	@cd $(LOCALBIN)/tmp/kcp-build && go build -o kcp ./cmd/kcp
+	@cp $(LOCALBIN)/tmp/kcp-build/kcp $(LOCALBIN)/kcp && rm -rf $(LOCALBIN)/tmp/kcp-build
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
