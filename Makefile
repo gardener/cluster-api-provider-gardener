@@ -255,7 +255,7 @@ ENVTEST_VERSION ?= v0.21.0
 # renovate: datasource=github-tags depName=kubernetes/api
 ENVTEST_K8S_VERSION ?= v0.33.2
 # renovate: datasource=github-releases depName=kubernetes-sigs/cluster-api
-CLUSTERCTL_VERSION ?= v1.9.9
+CLUSTERCTL_VERSION ?= v1.10.3
 # renovate: datasource=github-releases depName=kcp-dev/kcp
 APIGEN_VERSION ?= v0.27.1
 # renovate: datasource=github-releases depName=kcp-dev/kcp
