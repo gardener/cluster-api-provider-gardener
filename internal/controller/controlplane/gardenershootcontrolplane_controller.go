@@ -19,7 +19,6 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -32,10 +31,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	controlplanev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/controlplane/v1alpha1"
 	infrastructurev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/infrastructure/v1alpha1"
@@ -49,9 +50,8 @@ const (
 
 // GardenerShootControlPlaneReconciler reconciles a GardenerShootControlPlane object
 type GardenerShootControlPlaneReconciler struct {
-	Client         client.Client
+	Manager        mcmanager.Manager
 	GardenerClient client.Client
-	Scheme         *runtime.Scheme
 	IsKCP          bool
 
 	PrioritizeShoot bool
@@ -80,8 +80,14 @@ type ControlPlaneContext struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/reconcile
-func (r *GardenerShootControlPlaneReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *GardenerShootControlPlaneReconciler) Reconcile(ctx context.Context, req mcreconcile.Request) (ctrl.Result, error) {
 	log := runtimelog.FromContext(ctx).WithValues("gardenershootcontrolplane", req.NamespacedName, "cluster", req.ClusterName)
+
+	cl, err := r.Manager.GetCluster(ctx, req.ClusterName)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to get cluster: %w", err)
+	}
+	c := cl.GetClient()
 
 	cpc := ControlPlaneContext{
 		ctx:         ctx,
@@ -90,7 +96,7 @@ func (r *GardenerShootControlPlaneReconciler) Reconcile(ctx context.Context, req
 
 	log.Info("Reconciling GardenerShootControlPlane")
 	cpc.shootControlPlane = &controlplanev1alpha1.GardenerShootControlPlane{}
-	if err := r.Client.Get(cpc.ctx, req.NamespacedName, cpc.shootControlPlane); err != nil {
+	if err := c.Get(cpc.ctx, req.NamespacedName, cpc.shootControlPlane); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("GardenerShootControlPlane not found or already deleted")
 			return ctrl.Result{}, nil
@@ -100,8 +106,7 @@ func (r *GardenerShootControlPlaneReconciler) Reconcile(ctx context.Context, req
 	}
 
 	log.Info("Getting own cluster")
-	var err error
-	cpc.cluster, err = util.GetOwnerCluster(cpc.ctx, r.Client, cpc.shootControlPlane.ObjectMeta)
+	cpc.cluster, err = util.GetOwnerCluster(cpc.ctx, c, cpc.shootControlPlane.ObjectMeta)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -126,23 +131,23 @@ func (r *GardenerShootControlPlaneReconciler) Reconcile(ctx context.Context, req
 	}
 	// Handle deleted clusters
 	if !cpc.shootControlPlane.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(cpc)
+		return r.reconcileDelete(cpc, c)
 	}
 
 	// Handle non-deleted clusters
-	return r.reconcile(cpc)
+	return r.reconcile(cpc, c)
 }
 
 var errIncompleteSpecifications = fmt.Errorf("incomplete specifications")
 
-func (r *GardenerShootControlPlaneReconciler) reconcile(cpc ControlPlaneContext) (ctrl.Result, error) {
+func (r *GardenerShootControlPlaneReconciler) reconcile(cpc ControlPlaneContext, c client.Client) (ctrl.Result, error) {
 	log := runtimelog.FromContext(cpc.ctx).WithValues("operation", "reconcile")
 
 	log.Info("Adding finalizer to GardenerShootControlPlane")
 	patch := client.MergeFrom(cpc.shootControlPlane.DeepCopy())
 	// TODO(tobschli): This clashes with the finalizer that CAPI uses. Maybe we do not need a finalizer at all?
 	if controllerutil.AddFinalizer(cpc.shootControlPlane, clusterv1beta1.ClusterFinalizer) {
-		if err := r.Client.Patch(cpc.ctx, cpc.shootControlPlane, patch); err != nil {
+		if err := c.Patch(cpc.ctx, cpc.shootControlPlane, patch); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -153,7 +158,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcile(cpc ControlPlaneContext)
 			return ctrl.Result{}, err
 		}
 		log.Info("Shoot not found, creating it")
-		if err := r.createShoot(cpc); err != nil {
+		if err := r.createShoot(cpc, c); err != nil {
 			if errors.Is(err, errIncompleteSpecifications) {
 				return ctrl.Result{Requeue: true}, nil
 			}
@@ -165,13 +170,13 @@ func (r *GardenerShootControlPlaneReconciler) reconcile(cpc ControlPlaneContext)
 	}
 
 	if r.PrioritizeShoot {
-		if err := r.updateStatus(cpc); err != nil {
+		if err := r.updateStatus(cpc, c); err != nil {
 			log.Error(err, "failed to update status")
 			return ctrl.Result{}, err
 		}
 	}
 
-	if err := r.syncControlPlaneSpecs(cpc); err != nil {
+	if err := r.syncControlPlaneSpecs(cpc, c); err != nil {
 		log.Error(err, "failed to sync control plane spec")
 		return ctrl.Result{}, err
 	}
@@ -182,14 +187,14 @@ func (r *GardenerShootControlPlaneReconciler) reconcile(cpc ControlPlaneContext)
 	}
 
 	log.Info("Reconcile Shoot Access for ClusterAPI")
-	err = r.reconcileShootAccess(cpc)
+	err = r.reconcileShootAccess(cpc, c)
 	if err != nil {
 		log.Error(err, "Error reconciling Shoot Access for ClusterAPI")
 		return ctrl.Result{}, err
 	}
 
 	log.Info("Reconcile shootControlEndpoint")
-	err = r.reconcileShootControlPlaneEndpoint(cpc)
+	err = r.reconcileShootControlPlaneEndpoint(cpc, c)
 	if err != nil {
 		log.Error(err, "Error reconciling shootControlEndpoint")
 		return ctrl.Result{}, err
@@ -203,10 +208,10 @@ func (r *GardenerShootControlPlaneReconciler) reconcile(cpc ControlPlaneContext)
 	return ctrl.Result{}, nil
 }
 
-func (r *GardenerShootControlPlaneReconciler) createShoot(cpc ControlPlaneContext) error {
+func (r *GardenerShootControlPlaneReconciler) createShoot(cpc ControlPlaneContext, c client.Client) error {
 	log := runtimelog.FromContext(cpc.ctx).WithValues("operation", "createShoot")
 	infraCluster := &infrastructurev1alpha1.GardenerShootCluster{}
-	if err := r.Client.Get(cpc.ctx, types.NamespacedName{
+	if err := c.Get(cpc.ctx, types.NamespacedName{
 		Name:      cpc.cluster.Spec.InfrastructureRef.Name,
 		Namespace: cpc.cluster.Namespace,
 	}, infraCluster); err != nil {
@@ -215,7 +220,7 @@ func (r *GardenerShootControlPlaneReconciler) createShoot(cpc ControlPlaneContex
 	}
 	isShootWorkerless := cpc.shootControlPlane.Spec.Workerless
 
-	workers, err := r.getWorkerPoolsForCluster(cpc)
+	workers, err := r.getWorkerPoolsForCluster(cpc, c)
 	if err != nil {
 		log.Error(err, "Failed to get worker pools")
 		return err
@@ -236,11 +241,11 @@ func (r *GardenerShootControlPlaneReconciler) createShoot(cpc ControlPlaneContex
 	return r.GardenerClient.Create(cpc.ctx, shoot)
 }
 
-func (r *GardenerShootControlPlaneReconciler) reconcileDelete(cpc ControlPlaneContext) (ctrl.Result, error) {
+func (r *GardenerShootControlPlaneReconciler) reconcileDelete(cpc ControlPlaneContext, c client.Client) (ctrl.Result, error) {
 	log := runtimelog.FromContext(cpc.ctx).WithValues("operation", "delete")
 	log.Info("Reconciling Delete GardenerShootControlPlane")
 
-	err := r.Client.Delete(cpc.ctx, newEmptyShootAccessSecret(cpc.cluster))
+	err := c.Delete(cpc.ctx, newEmptyShootAccessSecret(cpc.cluster))
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
@@ -256,7 +261,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcileDelete(cpc ControlPlaneCo
 		cpc.shoot = nil
 	}
 
-	if err = r.updateStatus(cpc); err != nil && !apierrors.IsNotFound(err) {
+	if err = r.updateStatus(cpc, c); err != nil && !apierrors.IsNotFound(err) {
 		return ctrl.Result{}, err
 	}
 
@@ -275,7 +280,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcileDelete(cpc ControlPlaneCo
 
 	patch := client.MergeFrom(cpc.shootControlPlane.DeepCopy())
 	if controllerutil.RemoveFinalizer(cpc.shootControlPlane, clusterv1beta1.ClusterFinalizer) {
-		if err = r.Client.Patch(cpc.ctx, cpc.shootControlPlane, patch); err != nil {
+		if err = c.Patch(cpc.ctx, cpc.shootControlPlane, patch); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -285,11 +290,11 @@ func (r *GardenerShootControlPlaneReconciler) reconcileDelete(cpc ControlPlaneCo
 	return ctrl.Result{}, nil
 }
 
-func (r *GardenerShootControlPlaneReconciler) getWorkerPoolsForCluster(cpc ControlPlaneContext) ([]infrastructurev1alpha1.GardenerWorkerPool, error) {
+func (r *GardenerShootControlPlaneReconciler) getWorkerPoolsForCluster(cpc ControlPlaneContext, c client.Client) ([]infrastructurev1alpha1.GardenerWorkerPool, error) {
 	log := runtimelog.FromContext(cpc.ctx).WithValues("operation", "getWorkerPoolsForCluster")
 	machinePools := &expclusterv1.MachinePoolList{}
 	workers := []infrastructurev1alpha1.GardenerWorkerPool{}
-	if err := r.Client.List(cpc.ctx, machinePools, client.InNamespace(cpc.cluster.Namespace)); err != nil {
+	if err := c.List(cpc.ctx, machinePools, client.InNamespace(cpc.cluster.Namespace)); err != nil {
 		log.Error(err, "Failed to list machine pools")
 		return nil, err
 	}
@@ -305,7 +310,7 @@ func (r *GardenerShootControlPlaneReconciler) getWorkerPoolsForCluster(cpc Contr
 		}
 		workerRef := machinePool.Spec.Template.Spec.InfrastructureRef
 		workerPool := &infrastructurev1alpha1.GardenerWorkerPool{}
-		if err := r.Client.Get(cpc.ctx, client.ObjectKey{Name: workerRef.Name, Namespace: machinePool.Namespace}, workerPool); err != nil {
+		if err := c.Get(cpc.ctx, client.ObjectKey{Name: workerRef.Name, Namespace: machinePool.Namespace}, workerPool); err != nil {
 			if apierrors.IsNotFound(err) {
 				// TODO(tobschli): Notify the user that the specified worker pool could not be found.
 				log.Info("WorkerPool not found")
@@ -320,7 +325,7 @@ func (r *GardenerShootControlPlaneReconciler) getWorkerPoolsForCluster(cpc Contr
 	return workers, nil
 }
 
-func (r *GardenerShootControlPlaneReconciler) reconcileShootControlPlaneEndpoint(cpc ControlPlaneContext) error {
+func (r *GardenerShootControlPlaneReconciler) reconcileShootControlPlaneEndpoint(cpc ControlPlaneContext, c client.Client) error {
 	endpoint := ""
 	for _, address := range cpc.shoot.Status.AdvertisedAddresses {
 		if address.Name == constants.AdvertisedAddressExternal {
@@ -338,18 +343,18 @@ func (r *GardenerShootControlPlaneReconciler) reconcileShootControlPlaneEndpoint
 		Host: endpoint,
 		Port: 443,
 	}
-	return r.Client.Patch(cpc.ctx, cpc.shootControlPlane, patch)
+	return c.Patch(cpc.ctx, cpc.shootControlPlane, patch)
 }
 
-func (r *GardenerShootControlPlaneReconciler) reconcileShootAccess(cpc ControlPlaneContext) error {
+func (r *GardenerShootControlPlaneReconciler) reconcileShootAccess(cpc ControlPlaneContext, c client.Client) error {
 	secret := newEmptyShootAccessSecret(cpc.cluster)
-	err := r.Client.Get(cpc.ctx, client.ObjectKeyFromObject(secret), secret)
+	err := c.Get(cpc.ctx, client.ObjectKeyFromObject(secret), secret)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
 		// Create (empty secret)
-		if err = r.Client.Create(cpc.ctx, secret); err != nil {
+		if err = c.Create(cpc.ctx, secret); err != nil {
 			return err
 		}
 	}
@@ -377,7 +382,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcileShootAccess(cpc ControlPl
 		"validity": []byte(strconv.FormatInt(time.Now().Add(KubeConfigValiditySeconds*time.Second).Unix(), 10)),
 	}
 
-	return r.Client.Update(cpc.ctx, secret)
+	return c.Update(cpc.ctx, secret)
 }
 
 func isKubeConfigValid(data map[string][]byte) (bool, error) {
@@ -406,7 +411,7 @@ func newEmptyShootAccessSecret(cluster *clusterv1beta1.Cluster) *v1.Secret {
 	}
 }
 
-func (r *GardenerShootControlPlaneReconciler) syncControlPlaneSpecs(cpc ControlPlaneContext) error {
+func (r *GardenerShootControlPlaneReconciler) syncControlPlaneSpecs(cpc ControlPlaneContext, c client.Client) error {
 	log := runtimelog.FromContext(cpc.ctx).WithValues("operation", "syncSpecs")
 
 	originalShoot := cpc.shoot.DeepCopy()
@@ -421,7 +426,7 @@ func (r *GardenerShootControlPlaneReconciler) syncControlPlaneSpecs(cpc ControlP
 			patchShootControlPlane := client.MergeFrom(originalShootControlPlane)
 			// patch, _ := patchShootControlPlane.Data(cpc.shootControlPlane)
 			// log.Info("Calculated patch for GardenerShootControlPlane spec", "patch", string(patch))
-			if err := r.Client.Patch(cpc.ctx, cpc.shootControlPlane, patchShootControlPlane); err != nil {
+			if err := c.Patch(cpc.ctx, cpc.shootControlPlane, patchShootControlPlane); err != nil {
 				log.Error(err, "Error while syncing Gardener Shoot to GardenerShootControlPlane")
 				return err
 			}
@@ -449,7 +454,7 @@ func (r *GardenerShootControlPlaneReconciler) syncControlPlaneSpecs(cpc ControlP
 	return nil
 }
 
-func (r *GardenerShootControlPlaneReconciler) updateStatus(cpc ControlPlaneContext) error {
+func (r *GardenerShootControlPlaneReconciler) updateStatus(cpc ControlPlaneContext, c client.Client) error {
 	formerShootStatus := cpc.shootControlPlane.Status.DeepCopy()
 	if cpc.shoot != nil {
 		shootStatus := gardener.ComputeShootStatus(cpc.shoot.Status.LastOperation, cpc.shoot.Status.LastErrors, cpc.shoot.Status.Conditions...)
@@ -463,7 +468,7 @@ func (r *GardenerShootControlPlaneReconciler) updateStatus(cpc ControlPlaneConte
 	if apiequality.Semantic.DeepEqual(cpc.shootControlPlane.Status, formerShootStatus) {
 		return nil
 	}
-	return r.Client.Status().Update(cpc.ctx, cpc.shootControlPlane)
+	return c.Status().Update(cpc.ctx, cpc.shootControlPlane)
 }
 
 func controlPlaneReady(shootStatus gardenercorev1beta1.ShootStatus) bool {
@@ -514,16 +519,17 @@ func injectReferenceLabels(
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *GardenerShootControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager, targetCluster cluster.Cluster) error {
+func (r *GardenerShootControlPlaneReconciler) SetupWithManager(mgr mcmanager.Manager, targetCluster cluster.Cluster) error {
 	name := "gardenershootcontrolplane"
-	controller := ctrl.NewControllerManagedBy(mgr)
+	controller := mcbuilder.ControllerManagedBy(mgr)
 	if r.PrioritizeShoot {
 		controller.
 			Named(name + "-prioritized-shoot").
 			WatchesRawSource(
-				source.Kind[client.Object](targetCluster.GetCache(),
+				source.TypedKind[client.Object, mcreconcile.Request](
+					targetCluster.GetCache(),
 					&gardenercorev1beta1.Shoot{},
-					handler.EnqueueRequestsFromMapFunc(r.MapShootToControlPlaneObject),
+					handler.TypedEnqueueRequestsFromMapFunc[client.Object, mcreconcile.Request](r.MapShootToControlPlaneObject),
 				),
 			)
 	} else {
@@ -531,11 +537,11 @@ func (r *GardenerShootControlPlaneReconciler) SetupWithManager(mgr ctrl.Manager,
 			Named(name).
 			For(&controlplanev1alpha1.GardenerShootControlPlane{})
 	}
-	return controller.Complete(kcp.WithClusterInContext(r))
+	return controller.Complete(r)
 }
 
 // MapShootToControlPlaneObject maps a Shoot object to a GardenerShootControlPlane object.
-func (r *GardenerShootControlPlaneReconciler) MapShootToControlPlaneObject(ctx context.Context, obj client.Object) []reconcile.Request {
+func (r *GardenerShootControlPlaneReconciler) MapShootToControlPlaneObject(ctx context.Context, obj client.Object) []mcreconcile.Request {
 	var (
 		log          = runtimelog.FromContext(ctx).WithValues("shoot", client.ObjectKeyFromObject(obj))
 		clusterName  string
@@ -570,5 +576,5 @@ func (r *GardenerShootControlPlaneReconciler) MapShootToControlPlaneObject(ctx c
 			Namespace: namespace,
 		},
 	}
-	return []reconcile.Request{{NamespacedName: client.ObjectKeyFromObject(controlPlane), ClusterName: clusterName}}
+	return []mcreconcile.Request{{Request: reconcile.Request{NamespacedName: client.ObjectKeyFromObject(controlPlane)}, ClusterName: clusterName}}
 }

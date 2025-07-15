@@ -7,11 +7,14 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/kcp-dev/multicluster-provider/apiexport"
+	"golang.org/x/sync/errgroup"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
@@ -19,12 +22,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	controlplanev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api"
 	controllercluster "github.com/gardener/cluster-api-provider-gardener/internal/controller/cluster"
@@ -35,12 +38,12 @@ import (
 	webhookinfrastructurev1alpha1 "github.com/gardener/cluster-api-provider-gardener/internal/webhook/infrastructure/v1alpha1"
 )
 
-var (
-	setupLog = ctrl.Log.WithName("setup")
-)
-
 const (
 	apiExportName = "controlplane.cluster.x-k8s.io"
+)
+
+var (
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 // nolint:gocyclo
@@ -178,7 +181,6 @@ func main() {
 	}
 
 	var (
-		mgr   ctrl.Manager
 		err   error
 		isKcp bool
 	)
@@ -212,26 +214,40 @@ func main() {
 
 	if isKcp, err = util.HasKcpAPIGroups(restConfig); err != nil {
 		setupLog.Error(err, "to determine if kcp API Group is present")
-		os.Exit(1)
-	} else if isKcp {
+	}
+	if isKcp {
 		setupLog.Info("Found KCP APIs, looking up virtual workspace URL")
-		exportConfig, err := util.RestConfigForLogicalClusterHostingAPIExport(mgrContext, restConfig, apiExportName)
+		restConfig, err = util.RestConfigForLogicalClusterHostingAPIExport(mgrContext, restConfig, apiExportName)
 		if err != nil {
 			setupLog.Error(err, "looking up virtual workspace URL")
 			os.Exit(1)
 		}
-		mgr, err = kcp.NewClusterAwareManager(exportConfig, ctrlOptions)
+	}
+
+	var provider util.ProviderWithRun
+	if isKcp {
+		provider, err = apiexport.New(restConfig, apiexport.Options{
+			Scheme: controlplanev1alpha1.Scheme,
+		})
 		if err != nil {
-			setupLog.Error(err, "unable to create kcp aware manager")
+			setupLog.Error(err, "unable to create kcp Provider")
 			os.Exit(1)
 		}
-	} else {
-		setupLog.Info("Did not find KCP APIs. Assuming ordinary k8s cluster")
-		mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrlOptions)
+	}
+
+	mgr, err := mcmanager.New(restConfig, provider, ctrlOptions)
+	if err != nil {
+		setupLog.Error(err, "unable to create manager")
+		os.Exit(1)
+	}
+
+	if !isKcp {
+		cl, err := mgr.GetCluster(mgrContext, "")
 		if err != nil {
-			setupLog.Error(err, "unable to start manager")
+			setupLog.Error(err, "unable to get cluster")
 			os.Exit(1)
 		}
+		provider = util.NewSingleClusterProviderWithRun(cl)
 	}
 
 	// Create client from kubeconfig
@@ -241,7 +257,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	gardenMgr, err := manager.New(gardenRestConfig, manager.Options{
+	gardenMgr, err := mcmanager.New(gardenRestConfig, nil, manager.Options{
 		Logger:                  setupLog,
 		Scheme:                  controlplanev1alpha1.Scheme,
 		GracefulShutdownTimeout: ptr.To(5 * time.Second),
@@ -262,12 +278,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	localGardenManager := gardenMgr.GetLocalManager()
+	localManager := mgr.GetLocalManager()
+
 	// Create reconcilers
 	if isKcp {
 		setupLog.Info("Setting up Cluster reconciler, because KCP API Group is present")
 		if err = (&controllercluster.ClusterController{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
+			Manager: mgr,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Cluster")
 			os.Exit(1)
@@ -275,8 +293,7 @@ func main() {
 
 		setupLog.Info("Setting up MachinePool reconciler, because KCP API Group is present")
 		if err = (&controllercluster.MachinePoolController{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
+			Manager: mgr,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "MachinePool")
 			os.Exit(1)
@@ -284,49 +301,44 @@ func main() {
 	}
 
 	if err = (&controlplanecontroller.GardenerShootControlPlaneReconciler{
-		Client:         mgr.GetClient(),
-		GardenerClient: gardenMgr.GetClient(),
-		Scheme:         mgr.GetScheme(),
+		Manager:        mgr,
+		GardenerClient: localGardenManager.GetClient(),
 		IsKCP:          isKcp,
-	}).SetupWithManager(mgr, gardenMgr); err != nil {
+	}).SetupWithManager(mgr, localGardenManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerShootControlPlane")
 		os.Exit(1)
 	}
 	if err = (&controlplanecontroller.GardenerShootControlPlaneReconciler{
-		Client:          mgr.GetClient(),
-		GardenerClient:  gardenMgr.GetClient(),
-		Scheme:          mgr.GetScheme(),
+		Manager:         mgr,
+		GardenerClient:  localGardenManager.GetClient(),
 		IsKCP:           isKcp,
 		PrioritizeShoot: true,
-	}).SetupWithManager(mgr, gardenMgr); err != nil {
+	}).SetupWithManager(mgr, localGardenManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerShootControlPlane (prioritized Shoot)")
 		os.Exit(1)
 	}
 
 	if err = (&infrastructurecontroller.GardenerShootClusterReconciler{
-		Client:         mgr.GetClient(),
-		GardenerClient: gardenMgr.GetClient(),
-		Scheme:         mgr.GetScheme(),
+		Manager:        mgr,
+		GardenerClient: localGardenManager.GetClient(),
 		IsKCP:          isKcp,
-	}).SetupWithManager(mgr, gardenMgr); err != nil {
+	}).SetupWithManager(mgr, localGardenManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerShootCluster")
 		os.Exit(1)
 	}
 	if err = (&infrastructurecontroller.GardenerShootClusterReconciler{
-		Client:          mgr.GetClient(),
-		GardenerClient:  gardenMgr.GetClient(),
-		Scheme:          mgr.GetScheme(),
+		Manager:         mgr,
+		GardenerClient:  localGardenManager.GetClient(),
 		IsKCP:           isKcp,
 		PrioritizeShoot: true,
-	}).SetupWithManager(mgr, gardenMgr); err != nil {
+	}).SetupWithManager(mgr, localGardenManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerShootCluster (prioritized Shoot)")
 		os.Exit(1)
 	}
-
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhookcontrolplanev1alpha1.
-			SetupGardenerShootControlPlaneWebhookWithManager(mgr, gardenMgr.GetClient()); err != nil {
+			SetupGardenerShootControlPlaneWebhookWithManager(localManager, localGardenManager.GetClient()); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "GardenerShootControlPlane")
 			os.Exit(1)
 		}
@@ -336,35 +348,35 @@ func main() {
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhookinfrastructurev1alpha1.
-			SetupGardenerShootClusterWebhookWithManager(mgr, gardenMgr.GetClient()); err != nil {
+			SetupGardenerShootClusterWebhookWithManager(localManager, localGardenManager.GetClient()); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "GardenerShootCluster")
 			os.Exit(1)
 		}
 	}
 
 	if err = (&infrastructurecontroller.GardenerWorkerPoolReconciler{
-		Client:         mgr.GetClient(),
-		GardenerClient: gardenMgr.GetClient(),
-		Scheme:         mgr.GetScheme(),
+		Manager:        mgr,
+		GardenerClient: localGardenManager.GetClient(),
+		Scheme:         localManager.GetScheme(),
 		IsKCP:          isKcp,
-	}).SetupWithManager(mgr, gardenMgr); err != nil {
+	}).SetupWithManager(mgr, localGardenManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerWorkerPool")
 		os.Exit(1)
 	}
 	if err = (&infrastructurecontroller.GardenerWorkerPoolReconciler{
-		Client:          mgr.GetClient(),
-		GardenerClient:  gardenMgr.GetClient(),
-		Scheme:          mgr.GetScheme(),
+		Manager:         mgr,
+		GardenerClient:  localGardenManager.GetClient(),
+		Scheme:          localManager.GetScheme(),
 		IsKCP:           isKcp,
 		PrioritizeShoot: true,
-	}).SetupWithManager(mgr, gardenMgr); err != nil {
+	}).SetupWithManager(mgr, localGardenManager); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GardenerWorkerPool (prioritized Shoot)")
 		os.Exit(1)
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhookinfrastructurev1alpha1.
-			SetupGardenerWorkerPoolWebhookWithManager(mgr, gardenMgr.GetClient()); err != nil {
+			SetupGardenerWorkerPoolWebhookWithManager(localManager, localGardenManager.GetClient()); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "GardenerWorkerPool")
 			os.Exit(1)
 		}
@@ -374,7 +386,7 @@ func main() {
 
 	if metricsCertWatcher != nil {
 		setupLog.Info("Adding metrics certificate watcher to manager")
-		if err := mgr.Add(metricsCertWatcher); err != nil {
+		if err := localManager.Add(metricsCertWatcher); err != nil {
 			setupLog.Error(err, "unable to add metrics certificate watcher to manager")
 			os.Exit(1)
 		}
@@ -382,7 +394,7 @@ func main() {
 
 	if webhookCertWatcher != nil {
 		setupLog.Info("Adding webhook certificate watcher to manager")
-		if err := mgr.Add(webhookCertWatcher); err != nil {
+		if err := localManager.Add(webhookCertWatcher); err != nil {
 			setupLog.Error(err, "unable to add webhook certificate watcher to manager")
 			os.Exit(1)
 		}
@@ -397,9 +409,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
-	if err := mgr.Start(mgrContext); err != nil {
-		setupLog.Error(err, "problem running manager")
+	g, ctx := errgroup.WithContext(mgrContext)
+	setupLog.Info("starting provider")
+	g.Go(func() error {
+		return ignoreCanceled(provider.Run(ctx, mgr))
+	})
+	setupLog.Info("starting multicluster manager")
+	g.Go(func() error {
+		return ignoreCanceled(mgr.Start(ctx))
+	})
+	if err := g.Wait(); err != nil {
+		setupLog.Error(err, "unable to start")
 		os.Exit(1)
 	}
+}
+
+func ignoreCanceled(err error) error {
+	if errors.Is(err, context.Canceled) {
+		return nil
+	}
+	return err
 }

@@ -15,7 +15,11 @@ import (
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	expclusterv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	"sigs.k8s.io/multicluster-runtime/pkg/multicluster"
+	mcsingle "sigs.k8s.io/multicluster-runtime/providers/single"
 
 	controlplanev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/controlplane/v1alpha1"
 	infrastructurev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/infrastructure/v1alpha1"
@@ -303,4 +307,32 @@ func IsControlPlaneSpecEqual(original, updated *controlplanev1alpha1.GardenerSho
 // IsWorkerPoolSpecEqual checks if the original and updated GardenerWorkerPool specs are equal.
 func IsWorkerPoolSpecEqual(original, updated *infrastructurev1alpha1.GardenerWorkerPool) bool {
 	return apiequality.Semantic.DeepEqual(original.Spec, updated.Spec)
+}
+
+// ProviderWithRun is an interface that extends the multicluster.Provider interface that expects to be runnable.
+type ProviderWithRun interface {
+	multicluster.Provider
+	Run(context.Context, mcmanager.Manager) error
+}
+
+// SingleClusterProviderWithRun wraps a multicluster.Provider to run on a single cluster.
+type SingleClusterProviderWithRun struct {
+	multicluster.Provider
+	Cluster cluster.Cluster
+}
+
+// NewSingleClusterProviderWithRun creates a Single Cluster provider instance for the given cluster.
+func NewSingleClusterProviderWithRun(cluster cluster.Cluster) *SingleClusterProviderWithRun {
+	return &SingleClusterProviderWithRun{
+		Provider: mcsingle.New(mcmanager.LocalCluster, cluster),
+		Cluster:  cluster,
+	}
+}
+
+// Run starts the single cluster provider with the specified manager.
+func (s *SingleClusterProviderWithRun) Run(ctx context.Context, mgr mcmanager.Manager) error {
+	if err := mgr.Engage(ctx, mcmanager.LocalCluster, s.Cluster); err != nil {
+		return err
+	}
+	return s.Provider.(ProviderWithRun).Run(ctx, mgr)
 }

@@ -18,8 +18,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcsingle "sigs.k8s.io/multicluster-runtime/providers/single"
 
 	controlplanev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/controlplane/v1alpha1"
+	"github.com/gardener/cluster-api-provider-gardener/internal/util"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -31,6 +35,7 @@ var (
 	testEnv   *envtest.Environment
 	cfg       *rest.Config
 	k8sClient client.Client
+	mgr       mcmanager.Manager
 )
 
 func TestControllers(t *testing.T) {
@@ -66,9 +71,35 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	var provider util.ProviderWithRun
+	mgr, err = mcmanager.New(cfg, provider, mcmanager.Options{
+		Metrics: server.Options{
+			BindAddress: "0",
+		},
+	})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(mgr).NotTo(BeNil())
+
+	cl, err := mgr.GetCluster(ctx, "")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cl).NotTo(BeNil())
+
+	provider = &util.SingleClusterProviderWithRun{
+		Provider: mcsingle.New("", cl),
+		Cluster:  cl,
+	}
+	Expect(err).NotTo(HaveOccurred())
+	Expect(provider).NotTo(BeNil())
+
+	k8sClient = mgr.GetLocalManager().GetClient()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
+
+	By("starting the manager")
+	go func() {
+		defer GinkgoRecover()
+		Expect(mgr.Start(ctx)).To(Succeed())
+	}()
 })
 
 var _ = AfterSuite(func() {
