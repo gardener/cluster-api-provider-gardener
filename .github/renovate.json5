@@ -15,6 +15,7 @@
     "github.com/ahmetb/gen-crd-api-reference-docs",
     "github.com/onsi/ginkgo/v2",
     "github.com/onsi/gomega",
+    "golang.org/x/sync",
     "golang.org/x/tools",
     "k8s.io/api",
     "k8s.io/apimachinery",
@@ -137,7 +138,6 @@
     "golang.org/x/mod",
     "golang.org/x/net",
     "golang.org/x/oauth2",
-    "golang.org/x/sync",
     "golang.org/x/sys",
     "golang.org/x/term",
     "golang.org/x/text",
@@ -171,6 +171,6 @@
     "sigs.k8s.io/json",
     "sigs.k8s.io/randfill",
     "sigs.k8s.io/structured-merge-diff/v4",
-    "sigs.k8s.io/yaml"
+    "sigs.k8s.io/yaml",
   ]
 }

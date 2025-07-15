@@ -5,9 +5,11 @@ go 1.24.0
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
 	github.com/gardener/gardener v1.121.4
+	github.com/kcp-dev/kcp/sdk v0.27.1
 	github.com/kcp-dev/multicluster-provider v0.1.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
+	golang.org/x/sync v0.15.0
 	golang.org/x/tools v0.34.0
 	k8s.io/api v0.32.5
 	k8s.io/apimachinery v0.32.5
@@ -15,7 +17,7 @@ require (
 	k8s.io/code-generator v0.32.5
 	k8s.io/component-base v0.32.5
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
-	sigs.k8s.io/cluster-api v1.9.9
+	sigs.k8s.io/cluster-api v1.10.3
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/multicluster-runtime v0.20.4-alpha.7
 )
@@ -80,7 +82,6 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20250223115924-431177b024f3 // indirect
-	github.com/kcp-dev/kcp/sdk v0.27.1 // indirect
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -142,7 +143,6 @@ require (
 	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
