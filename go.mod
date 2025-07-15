@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/gardener/gardener v1.121.4
+	github.com/gardener/gardener v1.123.1
 	github.com/kcp-dev/kcp/sdk v0.27.1
 	github.com/kcp-dev/multicluster-provider v0.1.0
 	github.com/onsi/ginkgo/v2 v2.23.4
