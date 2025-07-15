@@ -3,6 +3,12 @@
   extends: [
     'github>gardener/gardener//.github/renovate.json5'
   ],
+  packageRules: [
+    {
+      matchPackageNames: ['sigs.k8s.io/cluster-api', 'kubernetes-sigs/cluster-api'],
+      groupName: 'sigs.k8s.io/cluster-api',
+    },
+  ],
   // The following list of dependencies to ignore is updated by `make generate`.
   // DO NOT EDIT THIS SECTION MANUALLY.
   ignoreDeps: [
@@ -165,6 +171,6 @@
     "sigs.k8s.io/json",
     "sigs.k8s.io/randfill",
     "sigs.k8s.io/structured-merge-diff/v4",
-    "sigs.k8s.io/yaml",
-  ],
+    "sigs.k8s.io/yaml"
+  ]
 }
