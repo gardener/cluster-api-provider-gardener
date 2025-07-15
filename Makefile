@@ -250,7 +250,7 @@ KCP ?= $(LOCALBIN)/kcp
 
 ## Tool Versions
 # renovate: datasource=github-releases depName=kubernetes-sigs/cluster-api
-CLUSTERCTL_VERSION ?= v1.10.3
+CLUSTERCTL_VERSION ?= v1.10.4
 # renovate: datasource=github-releases depName=kcp-dev/kcp
 APIGEN_VERSION ?= v0.27.1
 # renovate: datasource=github-releases depName=kcp-dev/kcp
