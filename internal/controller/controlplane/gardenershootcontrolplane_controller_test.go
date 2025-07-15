@@ -44,6 +44,7 @@ var _ = Describe("GardenerShootControlPlane Controller", func() {
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
+			Eventually(ctx, func() error { return k8sClient.Get(ctx, typeNamespacedName, gardenershootcontrolplane) }).Should(Succeed())
 		})
 
 		AfterEach(func() {

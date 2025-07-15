@@ -44,6 +44,7 @@ var _ = Describe("GardenerWorkerPool Controller", func() {
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
+			Eventually(ctx, func() error { return k8sClient.Get(ctx, typeNamespacedName, gardenerworkerpool) }).Should(Succeed())
 		})
 
 		AfterEach(func() {
@@ -58,8 +59,10 @@ var _ = Describe("GardenerWorkerPool Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &GardenerWorkerPoolReconciler{
-				Manager: mgr,
-				Scheme:  k8sClient.Scheme(),
+				Manager:        mgr,
+				GardenerClient: k8sClient,
+				IsKCP:          false,
+				Scheme:         k8sClient.Scheme(),
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, mcreconcile.Request{

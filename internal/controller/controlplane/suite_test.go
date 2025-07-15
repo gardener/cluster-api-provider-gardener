@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcsingle "sigs.k8s.io/multicluster-runtime/providers/single"
 
@@ -71,7 +72,11 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	var provider util.ProviderWithRun
-	mgr, err = mcmanager.New(cfg, provider, mcmanager.Options{})
+	mgr, err = mcmanager.New(cfg, provider, mcmanager.Options{
+		Metrics: server.Options{
+			BindAddress: "0",
+		},
+	})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(mgr).NotTo(BeNil())
 
@@ -92,8 +97,8 @@ var _ = BeforeSuite(func() {
 
 	By("starting the manager")
 	go func() {
-		err = mgr.Start(ctx)
-		Expect(err).NotTo(HaveOccurred())
+		defer GinkgoRecover()
+		Expect(mgr.Start(ctx)).To(Succeed())
 	}()
 })
 
