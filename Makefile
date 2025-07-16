@@ -111,7 +111,7 @@ test-e2e: $(KIND) ## Run the e2e tests. Expected an isolated environment using K
 		echo "No Kind cluster is running. Please start a Kind cluster before running the e2e tests."; \
 		exit 1; \
 	}
-	KUBECONFIG=$(GARDENER_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/ -v -ginkgo.v
+	KUBECONFIG=$(GARDENER_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/... -v -ginkgo.v # --ginkgo.label-filter=kind-kcp
 
 .PHONY: kcp-up
 kcp-up: kcp
@@ -126,7 +126,7 @@ clusterctl-init: clusterctl
 	KUBECONFIG=$(GARDENER_KUBECONFIG) EXP_MACHINE_POOL=true $(CLUSTERCTL) init
 
 .PHONY: ci-e2e-kind
-ci-e2e-kind: kind-gardener-up clusterctl-init test-e2e
+ci-e2e-kind: kind-gardener-up test-e2e
 
 .PHONY: format
 format: $(GOIMPORTS) $(GOIMPORTSREVISER) ## Format imports.

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package e2e
+package kind
 
 import (
 	"fmt"
@@ -39,14 +39,19 @@ var (
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
 	ctrl.SetLogger(zap.New(zap.WriteTo(GinkgoWriter)))
-	_, _ = fmt.Fprintf(GinkgoWriter, "Starting cluster-api-provider-gardener integration test suite\n")
-	RunSpecs(t, "e2e suite")
+	_, _ = fmt.Fprintf(GinkgoWriter, "Starting cluster-api-provider-gardener e2e test suite\n")
+	RunSpecs(t, "e2e suite kind")
 }
 
 var _ = BeforeSuite(func() {
-	By("building the manager(Operator) image")
-	cmd := exec.Command("make", "docker-build", "docker-push", fmt.Sprintf("IMG=%s", projectImage))
+	By("Initializing cluster-api")
+	cmd := exec.Command("make", "clusterctl-init")
 	_, err := utils.Run(cmd)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to initialize cluster-api")
+
+	By("building the manager(Operator) image")
+	cmd = exec.Command("make", "docker-build", "docker-push", fmt.Sprintf("IMG=%s", projectImage))
+	_, err = utils.Run(cmd)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build and push the manager(Operator) image")
 
 	// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.
