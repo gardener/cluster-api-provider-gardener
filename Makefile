@@ -253,7 +253,7 @@ KCP ?= $(LOCALBIN)/kcp
 # renovate: datasource=github-releases depName=kubernetes-sigs/controller-runtime
 ENVTEST_VERSION ?= v0.21.0
 # renovate: datasource=github-tags depName=kubernetes/api
-ENVTEST_K8S_VERSION ?= v0.33.2
+ENVTEST_K8S_VERSION ?= v0.33.3
 # renovate: datasource=github-releases depName=kubernetes-sigs/cluster-api
 CLUSTERCTL_VERSION ?= v1.10.3
 # renovate: datasource=github-releases depName=kcp-dev/kcp
