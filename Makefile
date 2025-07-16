@@ -98,8 +98,8 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: setup-envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_BRANCH_NAME) --bin-dir $(LOCALBIN) -p path)" go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
+test: $(REPORT_COLLECTOR) $(SETUP_ENVTEST) ## Run tests.
+	@bash $(GARDENER_HACK_DIR)/test-integration.sh $$(go list ./... | grep -v /e2e)
 
 # TODO(user): To use a different vendor for e2e tests, modify the setup under 'tests/e2e'.
 # The default setup assumes Kind is pre-installed and builds/loads the Manager Docker image locally.
@@ -242,7 +242,6 @@ $(LOCALBIN):
 export PATH := $(abspath $(LOCALBIN)):$(PATH)
 
 ## Tool Binaries
-ENVTEST ?= $(LOCALBIN)/setup-envtest
 CLUSTERCTL ?= $(LOCALBIN)/clusterctl
 GARDENER ?= $(LOCALBIN)/gardener
 CAPI ?= $(LOCALBIN)/capi
@@ -250,33 +249,12 @@ APIGEN ?= $(LOCALBIN)/apigen
 KCP ?= $(LOCALBIN)/kcp
 
 ## Tool Versions
-# renovate: datasource=github-releases depName=kubernetes-sigs/controller-runtime
-ENVTEST_VERSION ?= v0.21.0
-# renovate: datasource=github-tags depName=kubernetes/api
-ENVTEST_K8S_VERSION ?= v0.33.2
 # renovate: datasource=github-releases depName=kubernetes-sigs/cluster-api
 CLUSTERCTL_VERSION ?= v1.10.3
 # renovate: datasource=github-releases depName=kcp-dev/kcp
 APIGEN_VERSION ?= v0.27.1
 # renovate: datasource=github-releases depName=kcp-dev/kcp
 KCP_VERSION ?= v0.27.1
-
-# Build ENVTEST release branch names to fetch the envtest setup script (i.e. release-0.20)
-ENVTEST_BRANCH_NAME ?= $(shell echo $(ENVTEST_VERSION) | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
-ENVTEST_K8S_BRANCH_NAME ?= $(shell echo $(ENVTEST_K8S_VERSION) | awk -F'[v.]' '{printf "1.%d", $$3}')
-
-.PHONY: setup-envtest
-setup-envtest: envtest ## Download the binaries required for ENVTEST in the local bin directory.
-	@echo "Setting up envtest binaries for Kubernetes version $(ENVTEST_K8S_BRANCH_NAME)..."
-	@$(ENVTEST) use $(ENVTEST_K8S_BRANCH_NAME) --bin-dir $(LOCALBIN) -p path || { \
-		echo "Error: Failed to set up envtest binaries for version $(ENVTEST_K8S_BRANCH_NAME)."; \
-		exit 1; \
-	}
-
-.PHONY: envtest
-envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
-$(ENVTEST): $(LOCALBIN)
-	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_BRANCH_NAME))
 
 .PHONY: envsubst
 envsubst:

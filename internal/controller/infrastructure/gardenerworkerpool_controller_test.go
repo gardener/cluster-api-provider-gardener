@@ -6,12 +6,14 @@ package infrastructure
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -32,9 +34,14 @@ var _ = Describe("GardenerWorkerPool Controller", func() {
 		gardenerworkerpool := &infrastructurev1alpha1.GardenerWorkerPool{}
 
 		BeforeEach(func() {
-			By("creating the custom resource for the Kind GardenerWorkerPool")
-			err := k8sClient.Get(ctx, typeNamespacedName, gardenerworkerpool)
+			By("Ensuring the custom resource for the Kind GardenerWorkerPool")
+			var err error
+			Eventually(func() error {
+				err = k8sClient.Get(ctx, typeNamespacedName, gardenerworkerpool)
+				return client.IgnoreNotFound(err)
+			}).WithTimeout(10 * time.Second).Should(Succeed())
 			if err != nil && errors.IsNotFound(err) {
+				By("Creating the custom resource for the Kind GardenerWorkerPool")
 				resource := &infrastructurev1alpha1.GardenerWorkerPool{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
@@ -44,7 +51,7 @@ var _ = Describe("GardenerWorkerPool Controller", func() {
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
-			Eventually(ctx, func() error { return k8sClient.Get(ctx, typeNamespacedName, gardenerworkerpool) }).Should(Succeed())
+			Eventually(ctx, func() error { return k8sClient.Get(ctx, typeNamespacedName, gardenerworkerpool) }).WithTimeout(10 * time.Second).Should(Succeed())
 		})
 
 		AfterEach(func() {
