@@ -6,12 +6,14 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -32,9 +34,14 @@ var _ = Describe("GardenerShootControlPlane Controller", func() {
 		gardenershootcontrolplane := &controlplanev1alpha1.GardenerShootControlPlane{}
 
 		BeforeEach(func() {
-			By("creating the custom resource for the Kind GardenerShootControlPlane")
-			err := k8sClient.Get(ctx, typeNamespacedName, gardenershootcontrolplane)
+			By("Ensuring the custom resource for the Kind GardenerShootControlPlane")
+			var err error
+			Eventually(func() error {
+				err = k8sClient.Get(ctx, typeNamespacedName, gardenershootcontrolplane)
+				return client.IgnoreNotFound(err)
+			}).WithTimeout(10 * time.Second).Should(Succeed())
 			if err != nil && errors.IsNotFound(err) {
+				By("Creating the custom resource for the Kind GardenerShootControlPlane")
 				resource := &controlplanev1alpha1.GardenerShootControlPlane{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
@@ -44,7 +51,7 @@ var _ = Describe("GardenerShootControlPlane Controller", func() {
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
-			Eventually(ctx, func() error { return k8sClient.Get(ctx, typeNamespacedName, gardenershootcontrolplane) }).Should(Succeed())
+			Eventually(ctx, func() error { return k8sClient.Get(ctx, typeNamespacedName, gardenershootcontrolplane) }).WithTimeout(10 * time.Second).Should(Succeed())
 		})
 
 		AfterEach(func() {
