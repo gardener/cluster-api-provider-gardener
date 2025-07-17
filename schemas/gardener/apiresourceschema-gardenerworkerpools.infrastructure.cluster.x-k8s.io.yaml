@@ -130,25 +130,8 @@ spec:
                       region:
                         description: Region is a region name. This field is immutable.
                         type: string
-                      secretRef:
-                        description: |-
-                          SecretRef is a reference to a Secret object containing the cloud provider credentials for
-                          the object store where backups should be stored. It should have enough privileges to manipulate
-                          the objects as well as buckets.
-                          Deprecated: This field will be removed after v1.121.0 has been released. Use `CredentialsRef` instead.
-                          Until removed, this field is synced with the `CredentialsRef` field when it refers to a secret.
-                        properties:
-                          name:
-                            description: name is unique within a namespace to reference a secret resource.
-                            type: string
-                          namespace:
-                            description: namespace defines the space within which the secret name must be unique.
-                            type: string
-                        type: object
-                        x-kubernetes-map-type: atomic
                     required:
                       - provider
-                      - secretRef
                     type: object
                 type: object
               cri:
