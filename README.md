@@ -7,6 +7,9 @@ The `cluster-api-provider-gardener` integrates Gardener with Cluster API, enabli
 using Gardener as the control plane provider.
 This provider allows users to leverage the powerful features of Gardener for cluster lifecycle management.
 
+> [!IMPORTANT]
+> **Experimental:** The CAPGa provider is currently experimental and may change or be unstable. Use with caution.
+
 The controller is also KCP-aware, meaning that it can also be used in KCP as a KCP-controller.
 
 ## [Documentation](./docs/README.md)
