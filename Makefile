@@ -127,7 +127,7 @@ clusterctl-init: clusterctl
 	KUBECONFIG=$(GARDENER_KUBECONFIG) EXP_MACHINE_POOL=true $(CLUSTERCTL) init
 
 .PHONY: ci-e2e-kind
-ci-e2e-kind: kind-gardener-up test-e2e
+ci-e2e-kind: kubectl-ws kubectl-kcp kind-gardener-up test-e2e
 
 .PHONY: format
 format: $(GOIMPORTS) $(GOIMPORTSREVISER) ## Format imports.
