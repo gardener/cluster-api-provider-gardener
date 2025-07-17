@@ -299,7 +299,8 @@ spec:
                       maxEmptyBulkDelete:
                         description: |-
                           MaxEmptyBulkDelete specifies the maximum number of empty nodes that can be deleted at the same time (default: MaxScaleDownParallelism when that is set).
-                          Deprecated: This field is deprecated and will be removed once gardener drops support for Kubernetes v1.32.
+
+                          Deprecated: This field is deprecated. Setting this field will be forbidden starting from Kubernetes 1.33 and will be removed once gardener drops support for kubernetes v1.32.
                           This cluster-autoscaler field is deprecated upstream, use --max-scale-down-parallelism instead.
                         format: int32
                         type: integer
@@ -356,13 +357,6 @@ spec:
                         format: int32
                         type: integer
                     type: object
-                  enableStaticTokenKubeconfig:
-                    description: |-
-                      EnableStaticTokenKubeconfig indicates whether static token kubeconfig secret will be created for the Shoot cluster.
-                      Setting this field to true is not supported.
-
-                      Deprecated: This field is deprecated and will be removed in gardener v1.120
-                    type: boolean
                   etcd:
                     description: ETCD contains configuration for etcds of the shoot cluster.
                     properties:
@@ -827,7 +821,8 @@ spec:
                           The `--pod-eviction-timeout` flag does not have effect when the taint based eviction is enabled. The taint
                           based eviction is beta (enabled by default) since Kubernetes 1.13 and GA since Kubernetes 1.18. Hence,
                           instead of setting this field, set the `spec.kubernetes.kubeAPIServer.defaultNotReadyTolerationSeconds` and
-                          `spec.kubernetes.kubeAPIServer.defaultUnreachableTolerationSeconds`. This field will be removed in gardener v1.120.
+                          `spec.kubernetes.kubeAPIServer.defaultUnreachableTolerationSeconds`. Setting this field is forbidden starting
+                          from Kubernetes 1.33.
                         type: string
                     type: object
                   kubeProxy:
