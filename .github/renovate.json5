@@ -6,9 +6,16 @@
   packageRules: [
     {
       matchPackageNames: ['sigs.k8s.io/cluster-api', 'kubernetes-sigs/cluster-api'],
-      groupName: 'sigs.k8s.io/cluster-api',
-    },
+      groupName: 'sigs.k8s.io/cluster-api'
+    }
   ],
+  prFooter: "**Release note**:\n\
+```other dependency\n\
+The following dependencies have been updated:\n\
+{{#each upgrades as |upgrade|}}\n\
+- `{{upgrade.depName}}` from `{{upgrade.currentVersion}}` to `{{upgrade.newVersion}}`. {{#if (equals upgrade.datasource 'github-releases')}}[Release Notes](https://github.com/{{upgrade.depName}}/releases/tag/{{upgrade.newVersion}}){{/if}}\n\
+{{/each}}\n\
+```",
   // The following list of dependencies to ignore is updated by `make generate`.
   // DO NOT EDIT THIS SECTION MANUALLY.
   ignoreDeps: [
