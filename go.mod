@@ -17,7 +17,7 @@ require (
 	k8s.io/code-generator v0.32.5
 	k8s.io/component-base v0.32.5
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
-	sigs.k8s.io/cluster-api v1.10.3
+	sigs.k8s.io/cluster-api v1.10.4
 	sigs.k8s.io/controller-runtime v0.20.4
 	sigs.k8s.io/multicluster-runtime v0.20.4-alpha.7
 )
