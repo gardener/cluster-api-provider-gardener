@@ -293,14 +293,16 @@ $(KCP): $(LOCALBIN)
 kubectl-kcp: $(KUBECTL_KCP) ## Download kubectl-kcp locally if necessary.
 $(KUBECTL_KCP): $(LOCALBIN)
 	curl -Lo $(KUBECTL_KCP).tar.gz https://github.com/kcp-dev/kcp/releases/download/$(KCP_VERSION)/kubectl-kcp-plugin_$(KCP_VERSION:v%=%)_$(SYSTEM_NAME)_$(SYSTEM_ARCH).tar.gz
-	tar -zxvf $(KUBECTL_KCP).tar.gz bin/kubectl-kcp
+	tar -zxvf $(KUBECTL_KCP).tar.gz bin/
+	rm $(KUBECTL_KCP).tar.gz
 	touch $(KUBECTL_KCP) && chmod +x $(KUBECTL_KCP)
 
 .PHONY: kubectl-ws
 kubectl-ws: $(KUBECTL_WS) ## Download kubectl-kcp locally if necessary.
 $(KUBECTL_WS): $(LOCALBIN)
 	curl -Lo $(KUBECTL_WS).tar.gz https://github.com/kcp-dev/kcp/releases/download/$(KCP_VERSION)/kubectl-create-workspace-plugin_$(KCP_VERSION:v%=%)_$(SYSTEM_NAME)_$(SYSTEM_ARCH).tar.gz
-	tar -zxvf $(KUBECTL_WS).tar.gz bin/kubectl-create-workspace
+	tar -zxvf $(KUBECTL_WS).tar.gz bin/
+	rm $(KUBECTL_WS).tar.gz
 	touch $(KUBECTL_WS) && chmod +x $(KUBECTL_WS)
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist

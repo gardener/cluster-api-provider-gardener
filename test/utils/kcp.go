@@ -21,7 +21,7 @@ func EnsureAndSwitchWorkspace(workspacePath ...string) error {
 	for _, path := range workspacePath {
 		_, err = Run(exec.Command("kubectl", "kcp", "ws", path)) // #nosec G204 -- only used during test
 		if err != nil {
-			_, err = Run(exec.Command("kubectl", "create workspace", path, "--enter")) // #nosec G204 -- only used during test
+			_, err = Run(exec.Command("kubectl", "create", "workspace", path, "--enter")) // #nosec G204 -- only used during test
 		}
 		if err != nil {
 			return err
