@@ -173,6 +173,7 @@ func GetProjectDir() (string, error) {
 	if err != nil {
 		return wd, err
 	}
+	wd = strings.ReplaceAll(wd, "/test/e2e/kind-kcp", "")
 	wd = strings.ReplaceAll(wd, "/test/e2e/kind", "")
 	return wd, nil
 }

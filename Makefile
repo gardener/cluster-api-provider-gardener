@@ -111,11 +111,12 @@ test-e2e: $(KIND) ## Run the e2e tests. Expected an isolated environment using K
 		echo "No Kind cluster is running. Please start a Kind cluster before running the e2e tests."; \
 		exit 1; \
 	}
-	KUBECONFIG=$(GARDENER_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/... -v -ginkgo.v # --ginkgo.label-filter=kind-kcp
+	KUBECONFIG=$(GARDENER_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/... -v -ginkgo.v
 
+KCP_PORT ?= 6443
 .PHONY: kcp-up
 kcp-up: kcp
-	$(KCP) start
+	$(KCP) start --secure-port $(KCP_PORT)
 
 .PHONY: kind-gardener-up
 kind-gardener-up: gardener
@@ -247,12 +248,12 @@ GARDENER ?= $(LOCALBIN)/gardener
 CAPI ?= $(LOCALBIN)/capi
 APIGEN ?= $(LOCALBIN)/apigen
 KCP ?= $(LOCALBIN)/kcp
+KUBECTL_KCP ?= $(LOCALBIN)/kubectl-kcp
+KUBECTL_WS ?= $(LOCALBIN)/kubectl-create-workspace
 
 ## Tool Versions
 # renovate: datasource=github-releases depName=kubernetes-sigs/cluster-api
 CLUSTERCTL_VERSION ?= v1.10.4
-# renovate: datasource=github-releases depName=kcp-dev/kcp
-APIGEN_VERSION ?= v0.27.1
 # renovate: datasource=github-releases depName=kcp-dev/kcp
 KCP_VERSION ?= v0.27.1
 
@@ -279,15 +280,28 @@ $(CAPI): $(LOCALBIN)
 .PHONY: apigen
 apigen: $(APIGEN) ## Download apigen locally if necessary.
 $(APIGEN): $(LOCALBIN)
-	$(call go-install-tool,$(APIGEN),github.com/kcp-dev/kcp/sdk/cmd/apigen,$(APIGEN_VERSION))
+	$(call go-install-tool,$(APIGEN),github.com/kcp-dev/kcp/sdk/cmd/apigen,$(KCP_VERSION))
 
 .PHONY: kcp
 kcp: $(KCP) ## Download kcp locally if necessary.
 $(KCP): $(LOCALBIN)
-	@rm -rf $(LOCALBIN)/tmp/kcp-build
-	@git clone --depth 1 --branch $(KCP_VERSION) https://github.com/kcp-dev/kcp.git $(LOCALBIN)/tmp/kcp-build
-	@cd $(LOCALBIN)/tmp/kcp-build && go build -o kcp ./cmd/kcp
-	@cp $(LOCALBIN)/tmp/kcp-build/kcp $(LOCALBIN)/kcp && rm -rf $(LOCALBIN)/tmp/kcp-build
+	curl -Lo $(KCP).tar.gz https://github.com/kcp-dev/kcp/releases/download/$(KCP_VERSION)/kcp_$(KCP_VERSION:v%=%)_$(SYSTEM_NAME)_$(SYSTEM_ARCH).tar.gz
+	tar -zxvf $(KCP).tar.gz bin/kcp
+	touch $(KCP) && chmod +x $(KCP)
+
+.PHONY: kubectl-kcp
+kubectl-kcp: $(KUBECTL_KCP) ## Download kubectl-kcp locally if necessary.
+$(KUBECTL_KCP): $(LOCALBIN)
+	curl -Lo $(KUBECTL_KCP).tar.gz https://github.com/kcp-dev/kcp/releases/download/$(KCP_VERSION)/kubectl-kcp-plugin_$(KCP_VERSION:v%=%)_$(SYSTEM_NAME)_$(SYSTEM_ARCH).tar.gz
+	tar -zxvf $(KUBECTL_KCP).tar.gz bin/kubectl-kcp
+	touch $(KUBECTL_KCP) && chmod +x $(KUBECTL_KCP)
+
+.PHONY: kubectl-ws
+kubectl-ws: $(KUBECTL_WS) ## Download kubectl-kcp locally if necessary.
+$(KUBECTL_WS): $(LOCALBIN)
+	curl -Lo $(KUBECTL_WS).tar.gz https://github.com/kcp-dev/kcp/releases/download/$(KCP_VERSION)/kubectl-create-workspace-plugin_$(KCP_VERSION:v%=%)_$(SYSTEM_NAME)_$(SYSTEM_ARCH).tar.gz
+	tar -zxvf $(KUBECTL_WS).tar.gz bin/kubectl-create-workspace
+	touch $(KUBECTL_WS) && chmod +x $(KUBECTL_WS)
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
