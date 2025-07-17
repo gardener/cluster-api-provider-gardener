@@ -161,7 +161,7 @@ var _ = Describe("Manager", Ordered, Label("kind"), func() {
 			Eventually(verifyControllerUp).Should(Succeed())
 		})
 
-		It("should create a GardenerShootControlPlane with a hibernated Shoot", func(ctx SpecContext) {
+		It("should create a CAPI Cluster resulting in a hibernated Shoot", func(ctx SpecContext) {
 			By("create client")
 			clusterClient, err := kubernetes.NewClientFromFile("", os.Getenv("KUBECONFIG"),
 				kubernetes.WithClientOptions(client.Options{Scheme: api.Scheme}),

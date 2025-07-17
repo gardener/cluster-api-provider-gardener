@@ -10,6 +10,9 @@ import (
 func EnsureAndSwitchWorkspace(workspacePath ...string) error {
 	expectedWorkspacePath := "root:" + strings.Join(workspacePath, ":")
 	currentWorkspace, err := Run(exec.Command("kubectl", "kcp", "ws", "."))
+	if err != nil {
+		return err
+	}
 	fmt.Printf("Current workspace: %q, expected workspace: %q\n", currentWorkspace, expectedWorkspacePath)
 	if strings.Contains(currentWorkspace, fmt.Sprintf("'%s'", expectedWorkspacePath)) {
 		return err

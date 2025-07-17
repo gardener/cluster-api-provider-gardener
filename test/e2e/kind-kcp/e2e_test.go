@@ -38,9 +38,6 @@ var (
 )
 
 var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
-	// Before running the tests, set up the environment by creating the namespace,
-	// enforce the restricted security policy to the namespace, installing CRDs,
-	// and deploying the controller.
 	BeforeAll(func() {
 		By("installing APIResourceSchemas, APIExports and APIBindings in the provider workspace")
 		Eventually(func(g Gomega) {
@@ -99,7 +96,7 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 			_, err := utils.Run(cmd)
 			Expect(err).NotTo(HaveOccurred(), "Failed to create APIBindings in the consuming workspace")
 		})
-		It("should create a GardenerShootControlPlane with a hibernated Shoot", func(ctx SpecContext) {
+		It("should create a CAPI Cluster resulting in a hibernated Shoot", func(ctx SpecContext) {
 			By("create client")
 
 			kcpClient, err := kubernetes.NewClientFromFile("", kubeconfigKcpWorkload,
