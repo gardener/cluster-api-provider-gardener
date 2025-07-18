@@ -15,7 +15,7 @@ func EnsureAndSwitchWorkspace(workspacePath ...string) error {
 	}
 	fmt.Printf("Current workspace: %q, expected workspace: %q\n", currentWorkspace, expectedWorkspacePath)
 	if strings.Contains(currentWorkspace, fmt.Sprintf("'%s'", expectedWorkspacePath)) {
-		return err
+		return nil
 	}
 	_, err = Run(exec.Command("kubectl", "kcp", "ws", ":root"))
 	if err != nil {
