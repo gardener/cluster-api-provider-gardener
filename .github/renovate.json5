@@ -9,6 +9,10 @@
       groupName: 'sigs.k8s.io/cluster-api'
     }
   ],
+  postUpgradeTasks: {
+    commands: ['make generate'],
+    fileFilters: ['config/crd/**', 'schemas/**', '.github/renovate.json5'],
+  },
   prFooter: "**Release note**:\n\
 ```other dependency\n\
 The following dependencies have been updated:\n\
