@@ -33,7 +33,7 @@ kubectl apply -f schemas/binding.yaml
 
 **Run controller:**
 ```shell
-ENABLE_WEBHOOKS=false go run cmd/main.go --kubeconfig <path/to/kcp-kubeconfig> -gardener-kubeconfig  <path/to/gardener/kubeconfig.yaml>
+ENABLE_WEBHOOKS=false go run cmd/main.go --kubeconfig <path/to/kcp-kubeconfig> -gardener-kubeconfig <path/to/gardener/kubeconfig.yaml>
 ```
 
 **Create and enter consuming workspace:**
