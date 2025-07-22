@@ -56,7 +56,6 @@ The following dependencies have been updated:\n\
     "github.com/beorn7/perks",
     "github.com/blang/semver/v4",
     "github.com/brunoga/deep",
-    "github.com/cenkalti/backoff/v4",
     "github.com/cespare/xxhash/v2",
     "github.com/coreos/go-semver",
     "github.com/coreos/go-systemd/v22",

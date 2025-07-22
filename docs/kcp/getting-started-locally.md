@@ -7,6 +7,7 @@
 - ☸️ kubectl version v1.11.3+.
 - 🌻 a local Gardener cluster
 - 🗂️ a KCP server (`KUBECONFIG` usually is located in `.kcp/admin.kubeconfig`, relative from where KCP is started)
+  - a local KCP server can also be acquired by using the command `make kcp-up`
 - 🔌 KCP's `kubectl` plugins
 
 ## To Deploy on the cluster 🚢
