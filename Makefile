@@ -120,7 +120,11 @@ kcp-up: kcp
 
 .PHONY: kind-gardener-up
 kind-gardener-up: gardener
-	@./hack/kind-gardener-up.sh $(GARDENER)
+	@./hack/kind-gardener.sh up $(GARDENER)
+
+.PHONY: kind-gardener-down
+kind-gardener-down: gardener
+	@./hack/kind-gardener.sh down $(GARDENER)
 
 .PHONY: clusterctl-init
 clusterctl-init: clusterctl

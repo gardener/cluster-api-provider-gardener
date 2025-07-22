@@ -4,8 +4,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-cd "$1"
+command="$1"
+path="$2"
+
+cd "$path"
 chmod +rw . -R
 chmod +rwx ./hack -R
-make kind-up
-make gardener-up
+
+case $command in
+  up)
+  make kind-up
+  make gardener-up
+  ;;
+  down)
+  make kind-down
+  ;;
+esac
