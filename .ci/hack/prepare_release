@@ -21,14 +21,16 @@ apk add --no-cache \
     tar \
     gzip \
     sed \
-    jq
+    jq \
+    `# Adding required packages for building golangci-lint with CGO_ENABLED` \
+    gcc \
+    musl-dev \
+    binutils-gold
 
 # create virtual package with the dev tools
 echo "Installing dev tools in a virtual package"
 apk add --no-cache --virtual .build-deps \
-    gcc \
-    go \
-    musl-dev
+    go
 
 GOLANG_VERSION="$(sed -rn 's/FROM (eu\.gcr\.io\/gardener-project\/3rd\/golang|golang):([^ ]+).*/\2/p' < "$repo_root_dir/Dockerfile")"
 
