@@ -66,8 +66,8 @@ help: ## Display this help.
 
 ##@ Development
 
-.PHONY: verify-extended
-verify-extended: check lint-config test sast-report ## Generate and reformat code, run tests
+.PHONY: verify
+verify: check lint-config test ## Generate and reformat code, run tests
 
 .PHONY: manifests
 manifests: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
