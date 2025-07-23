@@ -66,6 +66,10 @@ help: ## Display this help.
 
 ##@ Development
 
+# TODO(LucaBernstein): Remove this once the migration to GitHub Actions is complete.
+.PHONY: verify-extended
+verify-extended: verify
+
 .PHONY: verify
 verify: check lint-config test ## Generate and reformat code, run tests
 
