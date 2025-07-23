@@ -66,8 +66,12 @@ help: ## Display this help.
 
 ##@ Development
 
+# TODO(LucaBernstein): Remove this once the migration to GitHub Actions is complete.
 .PHONY: verify-extended
-verify-extended: check lint-config test sast-report ## Generate and reformat code, run tests
+verify-extended: verify
+
+.PHONY: verify
+verify: check lint-config test ## Generate and reformat code, run tests
 
 .PHONY: manifests
 manifests: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
