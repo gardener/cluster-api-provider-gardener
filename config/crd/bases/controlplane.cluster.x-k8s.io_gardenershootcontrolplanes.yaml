@@ -620,8 +620,10 @@ spec:
                       featureGates:
                         additionalProperties:
                           type: boolean
-                        description: FeatureGates contains information about enabled
-                          feature gates.
+                        description: |-
+                          FeatureGates contains information about enabled feature gates.
+
+                          This is a legacy field that should no longer be used. Instead, consider using inline map for feature gates definitions.
                         type: object
                       logging:
                         description: Logging contains configuration for the log level
@@ -881,8 +883,10 @@ spec:
                       featureGates:
                         additionalProperties:
                           type: boolean
-                        description: FeatureGates contains information about enabled
-                          feature gates.
+                        description: |-
+                          FeatureGates contains information about enabled feature gates.
+
+                          This is a legacy field that should no longer be used. Instead, consider using inline map for feature gates definitions.
                         type: object
                       horizontalPodAutoscaler:
                         description: HorizontalPodAutoscalerConfig contains horizontal
@@ -947,8 +951,10 @@ spec:
                       featureGates:
                         additionalProperties:
                           type: boolean
-                        description: FeatureGates contains information about enabled
-                          feature gates.
+                        description: |-
+                          FeatureGates contains information about enabled feature gates.
+
+                          This is a legacy field that should no longer be used. Instead, consider using inline map for feature gates definitions.
                         type: object
                       mode:
                         description: |-
@@ -963,8 +969,10 @@ spec:
                       featureGates:
                         additionalProperties:
                           type: boolean
-                        description: FeatureGates contains information about enabled
-                          feature gates.
+                        description: |-
+                          FeatureGates contains information about enabled feature gates.
+
+                          This is a legacy field that should no longer be used. Instead, consider using inline map for feature gates definitions.
                         type: object
                       kubeMaxPDVols:
                         description: |-
@@ -1167,8 +1175,10 @@ spec:
                       featureGates:
                         additionalProperties:
                           type: boolean
-                        description: FeatureGates contains information about enabled
-                          feature gates.
+                        description: |-
+                          FeatureGates contains information about enabled feature gates.
+
+                          This is a legacy field that should no longer be used. Instead, consider using inline map for feature gates definitions.
                         type: object
                       imageGCHighThresholdPercent:
                         description: |-
@@ -1368,6 +1378,12 @@ spec:
                           EvictionTolerance defines the fraction of replica count that can be evicted for update in case more than one
                           pod can be evicted (default: 0.5).
                         type: number
+                      featureGates:
+                        additionalProperties:
+                          type: boolean
+                        description: FeatureGates contains information about enabled
+                          feature gates.
+                        type: object
                       memoryAggregationInterval:
                         description: |-
                           MemoryAggregationInterval is the length of a single interval, for which the peak memory usage is computed.
