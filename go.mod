@@ -2,12 +2,6 @@ module github.com/gardener/cluster-api-provider-gardener
 
 go 1.24.0
 
-exclude (
-	cloud.google.com/go/compute/metadata v0.3.0
-	cloud.google.com/go/compute/metadata v0.5.2
-	cloud.google.com/go/compute/metadata v0.6.0
-)
-
 replace (
 	github.com/google/cel-go => github.com/google/cel-go v0.22.1
 	k8s.io/api => k8s.io/api v0.32.5
@@ -41,6 +35,7 @@ require (
 
 require (
 	cel.dev/expr v0.23.1 // indirect
+	cloud.google.com/go/compute/metadata v0.7.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
