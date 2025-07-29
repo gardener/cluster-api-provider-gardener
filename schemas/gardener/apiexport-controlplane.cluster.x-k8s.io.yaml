@@ -1,16 +1,33 @@
-apiVersion: apis.kcp.io/v1alpha1
+apiVersion: apis.kcp.io/v1alpha2
 kind: APIExport
 metadata:
   name: controlplane.cluster.x-k8s.io
 spec:
-  latestResourceSchemas:
-    - generated.gardenershootcontrolplanes.controlplane.cluster.x-k8s.io
-    - generated.gardenerworkerpools.infrastructure.cluster.x-k8s.io
-    - generated.gardenershootclusters.infrastructure.cluster.x-k8s.io
-    # CAPI resources for mock controller
-    - generated.clusters.cluster.x-k8s.io
-    - generated.machinepools.cluster.x-k8s.io
+  resources:
+    - name: gardenershootcontrolplanes
+      group: controlplane.cluster.x-k8s.io
+      schema: generated.gardenershootcontrolplanes.controlplane.cluster.x-k8s.io
+    - name: gardenerworkerpools
+      group: infrastructure.cluster.x-k8s.io
+      schema: generated.gardenerworkerpools.infrastructure.cluster.x-k8s.io
+    - name: gardenershootclusters
+      group: infrastructure.cluster.x-k8s.io
+      schema: generated.gardenershootclusters.infrastructure.cluster.x-k8s.io
+#    # CAPI resources for mock controller
+    - name: clusters
+      group: cluster.x-k8s.io
+      schema: generated.clusters.cluster.x-k8s.io
+    - name: machinepools
+      group: cluster.x-k8s.io
+      schema: generated.machinepools.cluster.x-k8s.io
   permissionClaims:
     - group: ""
       resource: "secrets"
-      all: true
+      verbs:
+        - "get"
+        - "list"
+        - "watch"
+        - "create"
+        - "update"
+        - "patch"
+        - "delete"
