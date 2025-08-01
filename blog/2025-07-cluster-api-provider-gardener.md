@@ -1,16 +1,17 @@
 ---
-title: "Announcing cluster-api-provider-gardener: A New Way to Manage Clusters with Cluster API and Gardener"
+title: "Announcing cluster-api-provider-gardener: Manage Gardener Clusters with Cluster API"
 authors:
   - tobschli
   - LucaBernstein
 tags:
   - Cluster API
   - CAPI
+  - GAPI
   - CAPGa
   - KCP
 ---
 
-## Announcing cluster-api-provider-gardener: A New Way to Manage Clusters with Cluster API and Gardener
+## Announcing cluster-api-provider-gardener: Manage Gardener Clusters with Cluster API
 
 We’re pleased to share that we have published [cluster-api-provider-gardener (CAPGa)](https://github.com/gardener/cluster-api-provider-gardener/), an open-source [Cluster API](https://cluster-api.sigs.k8s.io/) provider that uses Gardener as the underlying platform for cluster lifecycle management.
 
@@ -18,9 +19,11 @@ We’re pleased to share that we have published [cluster-api-provider-gardener (
 
 ### What is cluster-api-provider-gardener (CAPGa)?
 
-CAPGa allows you to manage Kubernetes clusters through Cluster API means, with Gardener acting as the cloud-independent cluster orchestrator.
+CAPGa allows you to manage Kubernetes clusters using declarative `cluster.x-k8s.io` Cluster API manifests, with Gardener acting as the cloud-independent provider and cluster orchestrator.
 
 Specifically, CAPGa implements the Cluster API’s provider interfaces to manage Gardener’s [Shoot clusters](https://gardener.cloud/about/) as Cluster API `Cluster` resources. This enables users to provision, update, and delete clusters managed by Gardener via standard Cluster API tooling and workflows.
+
+The following figure depicts the semantic mapping of Custer API (CAPI) resources to Gardener API (GAPI) resources:
 
 ![Image showing the interaction of CAPI and Gardener through CAPGa](./static/capi-interaction-gardener-capga.svg)
 
@@ -36,6 +39,10 @@ Gardener is a top-down architected platform, designed to deliver homogeneous Kub
 - Cluster lifecycle is abstracted away: versioning, networking, and OS images are handled centrally.
 - Clusters can be managed for multiple cloud providers simultaneously.
 
+This setup is depicted in the following illustration, where the Gardener API is used to manage clusters as a service:
+
+![Illustration: Gardener managed by service team](./static/gardener-managed-by-service-team.svg)
+
 #### Cluster API: Infrastructure-centric and bottom-up
 
 Cluster API (CAPI), on the other hand, is a bottom-up framework for building cluster management solutions. It’s aimed at infrastructure teams who need fine-grained control over every component of a Kubernetes cluster and know how to assemble them.
@@ -43,6 +50,10 @@ Cluster API (CAPI), on the other hand, is a bottom-up framework for building clu
 - Each resource is reconciled by dedicated controllers.
 - There’s no opinionated user interface. Users must understand the internals of Kubernetes cluster bootstrapping.
 - Powerful for building your own platform, but requires substantial operational ownership.
+
+This setup is illustrated below, where the end user manages the full lifecycle of the Cluster API management plane:
+
+![Illustration: Cluster API self-managed](./static/cluster-api-self-managed.svg)
 
 You can think of Gardener as a second evolutionary stage of Cluster API: more opinionated, more integrated, and focused on platform-level concerns.
 
@@ -64,25 +75,27 @@ This unlocks several new use cases:
 - Users familiar with CAPI tooling can now manage Gardener-based clusters.
 - Integrators can plug Gardener into existing Cluster API-based workflows.
 - Platforms can gradually move towards a unified control plane managed by Gardener, while still using familiar CAPI resources.
+- The [multi-plane controller model](https://pages.github.tools.sap/ApeiroRA/apeirora-docu/next/best-practices/control-planes/crt) enables bi-directional interaction between Gardener and Cluster API, allowing users to manage clusters through both APIs seamlessly.
 
 ### Key Features
 
 - **Cluster API compatibility**: Use familiar Cluster API resources to create and manage Kubernetes clusters.
 - **Still enjoy Gardener benefits**: Leverage Gardener’s existing support for various infrastructures, automatic version updates, hibernation and much more.
+- **KCP Support**: Integrated support for [KCP](kcp.io), the [New Era of Multi-Tenant Control Planes](https://documentation.apeirora.eu/blog/2025/03/25/kcp-multi-tenant-control-planes).
 
 ### Demo
 
 ![demo](./static/demo.gif)
 
-### KCP support
+### Integrated KCP support
 
-CAPGa comes with built-in [kcp](https://www.kcp.io/) support, allowing users to interact with a shared, multi-tenant control-plane that is purpose-built for Kubernetes-like APIs beyond traditional container workloads.
+CAPGa comes with built-in [KCP](https://www.kcp.io/) support, allowing users to interact with a shared, multi-tenant control-plane that is purpose-built for Kubernetes-like APIs beyond traditional container workloads.
 
-The long-term goal is to support CAPGa within a centrally managed _Platform Mesh_ built on top of kcp. This approach eliminates the need for users to provision and operate a dedicated Kubernetes cluster solely to host their Cluster API components. At the same time, users can interact directly with the Gardener API through the same unified control plane, enabling flexible and consistent cluster lifecycle management across both interfaces. This scenario is also illustrated in the image below.
+The long-term goal is to support CAPGa within a centrally managed _Platform Mesh_ built on top of KCP. This approach eliminates the need for users to provision and operate a dedicated Kubernetes cluster solely to host their Cluster API components. At the same time, users can interact directly with the Gardener API through the same unified control plane, enabling flexible and consistent cluster lifecycle management across both interfaces. This scenario is also illustrated in the image below.
 
 ![Transition from managing Cluster API from a custom cluster to Platform Mesh](./static/capi-transition-custom-platform-mesh.svg)
 
-#### Managed by End User (Cluster API)
+#### Cluster API: Managed by End User
 
 With a plain Cluster API setup, the end user owns and operates the full lifecycle of the management plane. That includes:
 - Deploying and maintaining the Cluster API controllers.
@@ -93,15 +106,23 @@ With a plain Cluster API setup, the end user owns and operates the full lifecycl
 
 This approach offers maximum control and flexibility, but also maximum operational responsibility. It’s suitable for teams with deep infrastructure expertise who need tailored setups or are building platforms themselves.
 
-#### Managed by Service Teams (Gardener + CAPGa on Platform Mesh)
+If Cluster API is used to build a Kubernetes-as-a-Service offering for end users, platform teams must create a secure abstraction layer on top of Cluster API. This ensures that end users do not directly access the management cluster or its components, but instead interact with a controlled interface that abstracts away the complexities of the underlying infrastructure.
 
-With CAPGa running on a centrally managed control plane like Platform Mesh (based on kcp), the Cluster API machinery is hosted and operated by platform or service teams. As an end user:
+#### Gardener API + CAPGa: Managed by Service Teams
+
+GAPI and CAPI (with CAPGa) ultimately expose different API styles for the same Kubernetes-as-a-Service domain, while both are semantically congruent in using the Kubernetes Resource Model (KRM).
+With modern developments built on top of generic Kubernetes control planes, e.g. KCP with [Platform Mesh](https://pages.github.tools.sap/ApeiroRA/apeirora-docu/next/best-practices/platform-mesh), platform teams can offer both APIs to end users in a secure manner (fully as-a-Service).
+Like Gardener, the K8s runtime with CAPGa and Cluster API, can be hosted and operated by platform or service teams.
+Only their KRM based APIs are exposed towards the end user.
+As an end user:
 - You don’t need to provision or maintain a CAPI management cluster.
 - You interact with a unified, shared API (Gardener + CAPI) exposed through kcp.
 - The platform team ensures the control plane is available, secure, and up to date.
 - You consume cluster lifecycle management as a service, focusing on cluster intents rather than the orchestration machinery.
 
 This model significantly reduces the operational burden for the user and promotes standardization and governance, while still offering the flexibility of Cluster API resources and workflows.
+
+Further information, especially on the concept of the platform mesh and maintaining a digital twin, can be found in the [ApeiroRA documentation](https://documentation.apeirora.eu/best-practices/control-planes/crt).
 
 ### Contributing
 
