@@ -41,7 +41,7 @@ Gardener is a top-down, platform-oriented solution designed to deliver homogeneo
 
 This setup is depicted in the following illustration, where the Gardener API is used to manage clusters as a service:
 
-![Illustration: Gardener managed by service team](./static/gardener-managed-by-service-team.svg)
+![Illustration: Gardener managed by service team](./static/gardener-managed.drawio.svg)
 
 #### Cluster API: Infrastructure-centric and bottom-up
 
@@ -53,7 +53,7 @@ Cluster API (CAPI), by contrast, is a bottom-up framework for building cluster m
 
 This setup is illustrated below, where the end user manages the full lifecycle of the Cluster API management plane:
 
-![Illustration: Cluster API self-managed](./static/cluster-api-self-managed.svg)
+![Illustration: Cluster API self-managed](./static/user-managed-capi.drawio.svg)
 
 > [!NOTE]  
 > You can think of Gardener as a second evolutionary stage of Cluster API: more opinionated, more integrated, and focused on platform-level concerns.
@@ -127,7 +127,7 @@ CAPGa comes with built-in [KCP](https://www.kcp.io/) support, allowing users to 
 
 The long-term goal is to support CAPGa within a centrally managed _Platform Mesh_ built on top of KCP. This approach eliminates the need for users to provision and operate a dedicated Kubernetes cluster solely to host their Cluster API components. At the same time, users can interact directly with the Gardener API through the same unified control plane, enabling flexible and consistent cluster lifecycle management across both interfaces. This scenario is also illustrated in the image below.
 
-![Managing Gardener clusters through Platform Mesh using the Gardener API, Cluster API and KCP](./static/capi-transition-custom-platform-mesh.svg)
+![Managing Gardener clusters through Platform Mesh using the Gardener API, Cluster API and KCP](./static/platform-mesh.drawio.svg)
 
 ### Contributing
 
