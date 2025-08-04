@@ -13,7 +13,7 @@ tags:
 
 ## Announcing cluster-api-provider-gardener: Manage Gardener Clusters with Cluster API
 
-We’re pleased to announce the release of [cluster-api-provider-gardener (CAPGa)](https://github.com/gardener/cluster-api-provider-gardener/), an open-source [Cluster API](https://cluster-api.sigs.k8s.io/) provider that leverages Gardener as the underlying platform for cluster lifecycle management.
+We're pleased to announce the release of [cluster-api-provider-gardener (CAPGa)](https://github.com/gardener/cluster-api-provider-gardener/), an open-source [Cluster API](https://cluster-api.sigs.k8s.io/) provider that leverages Gardener as the underlying platform for cluster lifecycle management.
 
 <!-- truncate -->
 
@@ -21,9 +21,9 @@ We’re pleased to announce the release of [cluster-api-provider-gardener (CAPGa
 
 CAPGa allows you to manage Kubernetes clusters using declarative `cluster.x-k8s.io` Cluster API manifests, with Gardener acting as the cloud-agnostic provider and cluster orchestrator.
 
-Specifically, CAPGa implements the Cluster API’s provider interfaces to manage Gardener’s [Shoot clusters](https://gardener.cloud/about/) as Cluster API `Cluster` resources. This allows users to provision, update, and delete clusters managed by Gardener via standard Cluster API tooling and workflows.
+Specifically, CAPGa implements the Cluster API's provider interfaces to manage Gardener's [Shoot clusters](https://gardener.cloud/about/) as Cluster API `Cluster` resources. This allows users to provision, update, and delete clusters managed by Gardener via standard Cluster API tooling and workflows.
 
-The following figure illustrates the semantic mapping of Cluster API (CAPI) resources to Gardener API (GAPI) resources:
+The following figure illustrates the semantic bi-directional mapping of Cluster API (CAPI) resources to Gardener API (GAPI) resources and vice versa:
 
 ![Image showing the interaction of CAPI and Gardener through CAPGa](./static/capi-interaction-gardener-capga.svg)
 
@@ -99,7 +99,7 @@ As an end user:
 This model significantly reduces the operational burden for the user and promotes standardization and governance, while still offering the flexibility of Cluster API resources and workflows.
 
 > [!TIP]  
-> Further information, especially on the concept of the platform mesh, maintaining a digital twin, and multi-planes, can be found in the [ApeiroRA documentation](https://documentation.apeirora.eu/best-practices/control-planes/crt).
+> Further information, especially on the concept of the platform mesh, maintaining a digital twin, and multi-planes, can be found in the [Apeiro documentation](https://documentation.apeirora.eu/best-practices/control-planes/crt).
 
 ### Why did we build CAPGa?
 
@@ -114,7 +114,7 @@ This unlocks several new use cases:
 ### Key Features
 
 - **Cluster API compatibility**: Use familiar Cluster API resources to create and manage Kubernetes clusters.
-- **Retain Gardener benefits**: Leverage Gardener’s support for various infrastructures, automatic version updates, hibernation, and much more.
+- **Retain Gardener benefits**: Leverage Gardener's support for various infrastructures, automatic version updates, hibernation, and much more.
 - **KCP Support**: Integrated support for KCP, the [New Era of Multi-Tenant Control Planes](https://documentation.apeirora.eu/blog/2025/03/25/kcp-multi-tenant-control-planes).
 
 ### Demo
