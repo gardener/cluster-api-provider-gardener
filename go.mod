@@ -16,7 +16,7 @@ replace (
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/gardener/gardener v1.124.0
-	github.com/kcp-dev/kcp/sdk v0.27.1
+	github.com/kcp-dev/kcp/sdk v0.28.0
 	github.com/kcp-dev/multicluster-provider v0.1.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
@@ -101,7 +101,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20250223115924-431177b024f3 // indirect
+	github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20250512171935-ebb573a40077 // indirect
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect

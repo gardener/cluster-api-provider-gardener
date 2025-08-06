@@ -1,5 +1,5 @@
 ---
-apiVersion: apis.kcp.io/v1alpha1
+apiVersion: apis.kcp.io/v1alpha2
 kind: APIBinding
 metadata:
   name: controlplane.cluster.x-k8s.io
@@ -10,6 +10,15 @@ spec:
       path: "root:gardener"
   permissionClaims:
     - resource: "secrets"
-      all: true
+      selector:
+        matchAll: true
       group: ""
       state: "Accepted"
+      verbs:
+        - "get"
+        - "list"
+        - "watch"
+        - "create"
+        - "update"
+        - "patch"
+        - "delete"
