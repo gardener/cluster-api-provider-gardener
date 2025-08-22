@@ -141,9 +141,7 @@ func SyncShootSpecFromGSCP(shoot *gardenercorev1beta1.Shoot, controlPlane *contr
 // SyncGSCPSpecFromShoot syncs the GardenerShootControlPlane spec from the Shoot spec.
 func SyncGSCPSpecFromShoot(shoot *gardenercorev1beta1.Shoot, controlPlane *controlplanev1alpha1.GardenerShootControlPlane) {
 	for _, key := range AnnotationAllowList {
-		if _, exists := controlPlane.Annotations[key]; exists {
-			delete(controlPlane.Annotations, key)
-		}
+		delete(controlPlane.Annotations, key)
 	}
 
 	controlPlane.Spec.Addons = shoot.Spec.Addons
