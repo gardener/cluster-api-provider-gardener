@@ -90,6 +90,8 @@ func ShootFromCAPIResources(
 }
 
 var (
+	// AnnotationAllowList defines the list of annotations that are allowed to be synced between GardenerShootControlPlane and Shoot.
+	// This is used to ensure that only specific annotations are propagated to the Shoot resource.
 	AnnotationAllowList = []string{
 		gardenerv1beta1constants.GardenerOperation,
 	}
