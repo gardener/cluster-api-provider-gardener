@@ -8,6 +8,7 @@ import (
 	"context"
 
 	gardenercorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	gardenerv1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,8 +89,34 @@ func ShootFromCAPIResources(
 	}
 }
 
+var (
+	AnnotationAllowList = []string{
+		gardenerv1beta1constants.GardenerOperation,
+	}
+)
+
+func filterAnnotationsToSync(annotations map[string]string) map[string]string {
+	syncedAnnotations := map[string]string{}
+
+	for _, key := range AnnotationAllowList {
+		if value, exists := annotations[key]; exists {
+			syncedAnnotations[key] = value
+		}
+	}
+
+	return syncedAnnotations
+}
+
 // SyncShootSpecFromGSCP syncs the Shoot spec from the GardenerShootControlPlane spec.
 func SyncShootSpecFromGSCP(shoot *gardenercorev1beta1.Shoot, controlPlane *controlplanev1alpha1.GardenerShootControlPlane) {
+	operationAnnotations := filterAnnotationsToSync(controlPlane.Annotations)
+
+	for key, value := range operationAnnotations {
+		if _, exists := shoot.Annotations[key]; !exists {
+			shoot.Annotations[key] = value
+		}
+	}
+
 	shoot.Spec.Addons = controlPlane.Spec.Addons
 	shoot.Spec.DNS = controlPlane.Spec.DNS
 	shoot.Spec.Extensions = controlPlane.Spec.Extensions
@@ -111,6 +138,12 @@ func SyncShootSpecFromGSCP(shoot *gardenercorev1beta1.Shoot, controlPlane *contr
 
 // SyncGSCPSpecFromShoot syncs the GardenerShootControlPlane spec from the Shoot spec.
 func SyncGSCPSpecFromShoot(shoot *gardenercorev1beta1.Shoot, controlPlane *controlplanev1alpha1.GardenerShootControlPlane) {
+	for _, key := range AnnotationAllowList {
+		if _, exists := controlPlane.Annotations[key]; exists {
+			delete(controlPlane.Annotations, key)
+		}
+	}
+
 	controlPlane.Spec.Addons = shoot.Spec.Addons
 	controlPlane.Spec.DNS = shoot.Spec.DNS
 	controlPlane.Spec.Extensions = shoot.Spec.Extensions
@@ -289,9 +322,9 @@ func GetMachinePoolForWorkerPool(ctx context.Context, c client.Client, workerPoo
 	return machinePool, nil
 }
 
-// IsShootSpecEqual checks if the original and updated GardenerShoot specs are equal.
+// IsShootSpecEqual checks if the original and updated GardenerShoot specs and annotations are equal.
 func IsShootSpecEqual(original, updated *gardenercorev1beta1.Shoot) bool {
-	return apiequality.Semantic.DeepEqual(original.Spec, updated.Spec)
+	return apiequality.Semantic.DeepEqual(original.Spec, updated.Spec) && apiequality.Semantic.DeepEqual(original.Annotations, updated.Annotations)
 }
 
 // IsClusterSpecEqual checks if the original and updated GardenerShootCluster specs are equal.
@@ -299,9 +332,9 @@ func IsClusterSpecEqual(original, updated *infrastructurev1alpha1.GardenerShootC
 	return apiequality.Semantic.DeepEqual(original.Spec, updated.Spec)
 }
 
-// IsControlPlaneSpecEqual checks if the original and updated GardenerShootControlPlane specs are equal.
+// IsControlPlaneSpecEqual checks if the original and updated GardenerShootControlPlane specs and annotations are equal.
 func IsControlPlaneSpecEqual(original, updated *controlplanev1alpha1.GardenerShootControlPlane) bool {
-	return apiequality.Semantic.DeepEqual(original.Spec, updated.Spec)
+	return apiequality.Semantic.DeepEqual(original.Spec, updated.Spec) && apiequality.Semantic.DeepEqual(original.Annotations, updated.Annotations)
 }
 
 // IsWorkerPoolSpecEqual checks if the original and updated GardenerWorkerPool specs are equal.
