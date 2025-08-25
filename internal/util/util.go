@@ -97,27 +97,29 @@ var (
 	}
 )
 
-func filterAnnotationsToSync(annotations map[string]string) map[string]string {
-	syncedAnnotations := map[string]string{}
-
-	for _, key := range AnnotationAllowList {
-		if value, exists := annotations[key]; exists {
-			syncedAnnotations[key] = value
+func syncAnnotations(source, target map[string]string, allowedKeys []string) map[string]string {
+	// Remove annotations from target that are not in the source and are in the allowed list
+	for _, key := range allowedKeys {
+		if _, exists := target[key]; exists {
+			if _, existsInSource := source[key]; !existsInSource {
+				delete(target, key)
+			}
 		}
 	}
 
-	return syncedAnnotations
+	// Add or update annotations from source to target if they are in the allowed list
+	for _, key := range allowedKeys {
+		if value, exists := source[key]; exists {
+			target[key] = value
+		}
+	}
+
+	return target
 }
 
 // SyncShootSpecFromGSCP syncs the Shoot spec from the GardenerShootControlPlane spec.
 func SyncShootSpecFromGSCP(shoot *gardenercorev1beta1.Shoot, controlPlane *controlplanev1alpha1.GardenerShootControlPlane) {
-	operationAnnotations := filterAnnotationsToSync(controlPlane.Annotations)
-
-	for key, value := range operationAnnotations {
-		if _, exists := shoot.Annotations[key]; !exists {
-			shoot.Annotations[key] = value
-		}
-	}
+	shoot.Annotations = syncAnnotations(controlPlane.Annotations, shoot.Annotations, AnnotationAllowList)
 
 	shoot.Spec.Addons = controlPlane.Spec.Addons
 	shoot.Spec.DNS = controlPlane.Spec.DNS
@@ -140,9 +142,7 @@ func SyncShootSpecFromGSCP(shoot *gardenercorev1beta1.Shoot, controlPlane *contr
 
 // SyncGSCPSpecFromShoot syncs the GardenerShootControlPlane spec from the Shoot spec.
 func SyncGSCPSpecFromShoot(shoot *gardenercorev1beta1.Shoot, controlPlane *controlplanev1alpha1.GardenerShootControlPlane) {
-	for _, key := range AnnotationAllowList {
-		delete(controlPlane.Annotations, key)
-	}
+	controlPlane.Annotations = syncAnnotations(shoot.Annotations, controlPlane.Annotations, AnnotationAllowList)
 
 	controlPlane.Spec.Addons = shoot.Spec.Addons
 	controlPlane.Spec.DNS = shoot.Spec.DNS
