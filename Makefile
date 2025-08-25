@@ -11,6 +11,8 @@ HACK_DIR            := $(REPO_ROOT)/hack
 # Image URL to use all building/pushing image targets
 IMG                 ?= localhost:5001/cluster-api-provider-gardener/controller:latest
 GARDENER_KUBECONFIG ?= ./bin/gardener/example/provider-local/seed-kind/base/kubeconfig
+RUNTIME_KUBECONFIG ?= $(GARDENER_KUBECONFIG)
+
 GARDENER_DIR        ?= $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener)
 CAPI_DIR            ?= $(shell go list -m -f '{{.Dir}}' sigs.k8s.io/cluster-api)
 KCP_KUBECONFIG      ?= ./.kcp/admin.kubeconfig
@@ -169,7 +171,7 @@ build: manifests generate fmt vet ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	ENABLE_WEBHOOKS=false go run ./cmd/main.go --kubeconfig=$(GARDENER_KUBECONFIG) --gardener-kubeconfig=$(GARDENER_KUBECONFIG)
+	ENABLE_WEBHOOKS=false go run ./cmd/main.go --kubeconfig=$(RUNTIME_KUBECONFIG) --gardener-kubeconfig=$(GARDENER_KUBECONFIG)
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
