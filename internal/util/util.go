@@ -98,19 +98,17 @@ var (
 )
 
 func syncAnnotations(source, target map[string]string, allowedKeys []string) map[string]string {
-	// Remove annotations from target that are not in the source and are in the allowed list
 	for _, key := range allowedKeys {
-		if _, exists := target[key]; exists {
-			if _, existsInSource := source[key]; !existsInSource {
-				delete(target, key)
-			}
+		// Add or update annotations from source to target if they are in the allowed list		
+		if sourceValue, existsInSource := source[key]; existsInSource {
+			target[key] = sourceValue
+			continue
 		}
-	}
 
-	// Add or update annotations from source to target if they are in the allowed list
-	for _, key := range allowedKeys {
-		if value, exists := source[key]; exists {
-			target[key] = value
+		// Remove annotations from target that are not in the source and are in the allowed list
+		_, existsInTarget := target[key]
+		if existsInTarget {
+			delete(target, key)
 		}
 	}
 
