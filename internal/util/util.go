@@ -99,7 +99,7 @@ var (
 
 func syncAnnotations(source, target map[string]string, allowedKeys []string) map[string]string {
 	for _, key := range allowedKeys {
-		// Add or update annotations from source to target if they are in the allowed list		
+		// Add or update annotations from source to target if they are in the allowed list
 		if sourceValue, existsInSource := source[key]; existsInSource {
 			target[key] = sourceValue
 			continue
