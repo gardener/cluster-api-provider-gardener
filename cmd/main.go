@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"time"
 
+	apisv1alpha2 "github.com/kcp-dev/kcp/sdk/apis/apis/v1alpha2"
 	"github.com/kcp-dev/multicluster-provider/apiexport"
 	"golang.org/x/sync/errgroup"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -227,7 +228,8 @@ func main() {
 	var provider util.ProviderWithRun
 	if isKcp {
 		provider, err = apiexport.New(restConfig, apiexport.Options{
-			Scheme: controlplanev1alpha1.Scheme,
+			Scheme:        controlplanev1alpha1.Scheme,
+			ObjectToWatch: &apisv1alpha2.APIBinding{},
 		})
 		if err != nil {
 			setupLog.Error(err, "unable to create kcp Provider")
