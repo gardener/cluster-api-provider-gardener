@@ -1,7 +1,7 @@
 apiVersion: apis.kcp.io/v1alpha2
 kind: APIExport
 metadata:
-  name: controlplane.cluster.x-k8s.io
+  name: capga
 spec:
   resources:
     - name: gardenershootcontrolplanes

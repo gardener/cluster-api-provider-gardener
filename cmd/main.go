@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	apiExportName = "controlplane.cluster.x-k8s.io"
+	apiExportName = "capga"
 )
 
 var (
