@@ -8,6 +8,10 @@
     {
       matchPackageNames: ['sigs.k8s.io/cluster-api', 'kubernetes-sigs/cluster-api'],
       groupName: 'sigs.k8s.io/cluster-api'
+    },
+    {
+      matchPackageNames: ['kcp-dev/kcp', 'github.com/kcp-dev/kcp/sdk'],
+      groupName: 'kcp-dev/kcp'
     }
   ],
   postUpgradeTasks: {
