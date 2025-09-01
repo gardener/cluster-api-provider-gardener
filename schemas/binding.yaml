@@ -2,11 +2,11 @@
 apiVersion: apis.kcp.io/v1alpha2
 kind: APIBinding
 metadata:
-  name: controlplane.cluster.x-k8s.io
+  name: capga
 spec:
   reference:
     export:
-      name: controlplane.cluster.x-k8s.io
+      name: capga
       path: "root:gardener"
   permissionClaims:
     - resource: "secrets"
