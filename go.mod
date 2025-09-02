@@ -28,7 +28,7 @@ require (
 	k8s.io/cluster-bootstrap v0.33.4
 	k8s.io/component-base v0.33.4
 	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
-	sigs.k8s.io/cluster-api v1.10.5
+	sigs.k8s.io/cluster-api v1.10.6
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/multicluster-runtime v0.20.4-alpha.7
 )
