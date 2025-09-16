@@ -42,19 +42,17 @@ func RestConfigForLogicalClusterHostingAPIExport(
 		return nil, fmt.Errorf("error creating APIExport client: %w", err)
 	}
 
-	apiExport := &apisv1alpha1.APIExport{}
-	if err := apiExportClient.Get(ctx, types.NamespacedName{Name: apiExportName}, apiExport); err != nil {
+	apiExportEndpointSlice := &apisv1alpha1.APIExportEndpointSlice{}
+	if err := apiExportClient.Get(ctx, types.NamespacedName{Name: apiExportName}, apiExportEndpointSlice); err != nil {
 		return nil, fmt.Errorf("error getting APIExport %q: %w", apiExportName, err)
 	}
-	// This field is deprecated, but the alternative is not feasible for us.
-	// We do not use Partitions. Without partitions, the controller does not populate the endpoints.
-	if len(apiExport.Status.VirtualWorkspaces) < 1 { // nolint:staticcheck
-		return nil, fmt.Errorf("APIExport %q status.virtualWorkspaces is empty", apiExportName)
+	if len(apiExportEndpointSlice.Status.APIExportEndpoints) < 1 { // nolint:staticcheck
+		return nil, fmt.Errorf("APIExportEndpointSlice %q status.endpoints is empty", apiExportName)
 	}
 
 	// create a new rest.Config with the APIExport's virtual workspace URL
 	exportConfig := rest.CopyConfig(cfg)
-	exportConfig.Host = apiExport.Status.VirtualWorkspaces[0].URL // nolint:staticcheck
+	exportConfig.Host = apiExportEndpointSlice.Status.APIExportEndpoints[0].URL // nolint:staticcheck
 
 	return exportConfig, nil
 }
