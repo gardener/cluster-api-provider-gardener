@@ -116,6 +116,7 @@ type GardenerShootControlPlaneSpec struct {
 	// The field is mutually exclusive with CredentialsBindingName.
 	// This field is immutable.
 	// +optional
+	// Deprecated: Use CredentialsBindingName instead. See https://github.com/gardener/gardener/blob/master/docs/usage/shoot-operations/secretbinding-to-credentialsbinding-migration.md for migration instructions.
 	SecretBindingName *string `json:"secretBindingName,omitempty" protobuf:"bytes,13,opt,name=secretBindingName"`
 	// Resources holds a list of named resource references that can be referred to in extension configs by their names.
 	// +optional

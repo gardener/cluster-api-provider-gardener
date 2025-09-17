@@ -127,7 +127,8 @@ func SyncShootSpecFromGSCP(shoot *gardenercorev1beta1.Shoot, controlPlane *contr
 	shoot.Spec.Monitoring = controlPlane.Spec.Monitoring
 	SyncShootProviderFromGSCP(shoot, controlPlane)
 	shoot.Spec.Purpose = controlPlane.Spec.Purpose
-	shoot.Spec.SecretBindingName = controlPlane.Spec.SecretBindingName
+	// TODO(tobschli): Remove, once SecretBindingName is removed from Gardener
+	shoot.Spec.SecretBindingName = controlPlane.Spec.SecretBindingName //nolint:staticcheck
 	// Let's not allow updates on SeedName as this causes the reconciler to not be able to update anything
 	// shoot.Spec.SeedName = controlPlane.Spec.SeedName
 	shoot.Spec.Resources = controlPlane.Spec.Resources
@@ -150,7 +151,8 @@ func SyncGSCPSpecFromShoot(shoot *gardenercorev1beta1.Shoot, controlPlane *contr
 	controlPlane.Spec.Monitoring = shoot.Spec.Monitoring
 	SyncGSCPProviderFromShoot(shoot, controlPlane)
 	controlPlane.Spec.Purpose = shoot.Spec.Purpose
-	controlPlane.Spec.SecretBindingName = shoot.Spec.SecretBindingName
+	// TODO(tobschli): Remove, once SecretBindingName is removed from Gardener
+	controlPlane.Spec.SecretBindingName = shoot.Spec.SecretBindingName //nolint:staticcheck
 	controlPlane.Spec.Resources = shoot.Spec.Resources
 	controlPlane.Spec.Tolerations = shoot.Spec.Tolerations
 	controlPlane.Spec.ExposureClassName = shoot.Spec.ExposureClassName
