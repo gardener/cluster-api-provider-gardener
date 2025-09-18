@@ -29,7 +29,7 @@ spec:
     name: local
   provider:
     type: local
-  secretBindingName: local # dummy, doesn't contain any credentials
+  credentialBindingName: local # dummy, doesn't contain any credentials
   kubernetes:
     version: "1.32"
     kubelet:
