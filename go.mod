@@ -17,7 +17,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/gardener/gardener v1.127.1
 	github.com/kcp-dev/kcp/sdk v0.28.1
-	github.com/kcp-dev/multicluster-provider v0.1.0
+	github.com/kcp-dev/multicluster-provider v0.2.0
 	github.com/onsi/ginkgo/v2 v2.25.0
 	github.com/onsi/gomega v1.38.0
 	github.com/valyala/fastjson v1.6.4
