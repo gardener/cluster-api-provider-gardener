@@ -21,8 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	expclusterv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	"sigs.k8s.io/cluster-api/util/record"
@@ -61,7 +60,7 @@ type GardenerShootControlPlaneReconciler struct {
 type ControlPlaneContext struct {
 	ctx context.Context
 
-	cluster           *clusterv1beta1.Cluster
+	cluster           *clusterv1beta2.Cluster
 	shootControlPlane *controlplanev1alpha1.GardenerShootControlPlane
 	shoot             *gardenercorev1beta1.Shoot
 	clusterName       string
@@ -146,7 +145,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcile(cpc ControlPlaneContext,
 	log.Info("Adding finalizer to GardenerShootControlPlane")
 	patch := client.MergeFrom(cpc.shootControlPlane.DeepCopy())
 	// TODO(tobschli): This clashes with the finalizer that CAPI uses. Maybe we do not need a finalizer at all?
-	if controllerutil.AddFinalizer(cpc.shootControlPlane, clusterv1beta1.ClusterFinalizer) {
+	if controllerutil.AddFinalizer(cpc.shootControlPlane, clusterv1beta2.ClusterFinalizer) {
 		if err := c.Patch(cpc.ctx, cpc.shootControlPlane, patch); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -279,7 +278,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcileDelete(cpc ControlPlaneCo
 	}
 
 	patch := client.MergeFrom(cpc.shootControlPlane.DeepCopy())
-	if controllerutil.RemoveFinalizer(cpc.shootControlPlane, clusterv1beta1.ClusterFinalizer) {
+	if controllerutil.RemoveFinalizer(cpc.shootControlPlane, clusterv1beta2.ClusterFinalizer) {
 		if err = c.Patch(cpc.ctx, cpc.shootControlPlane, patch); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -292,7 +291,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcileDelete(cpc ControlPlaneCo
 
 func (r *GardenerShootControlPlaneReconciler) getWorkerPoolsForCluster(cpc ControlPlaneContext, c client.Client) ([]infrastructurev1alpha1.GardenerWorkerPool, error) {
 	log := runtimelog.FromContext(cpc.ctx).WithValues("operation", "getWorkerPoolsForCluster")
-	machinePools := &expclusterv1.MachinePoolList{}
+	machinePools := &clusterv1beta2.MachinePoolList{}
 	workers := []infrastructurev1alpha1.GardenerWorkerPool{}
 	if err := c.List(cpc.ctx, machinePools, client.InNamespace(cpc.cluster.Namespace)); err != nil {
 		log.Error(err, "Failed to list machine pools")
@@ -305,7 +304,7 @@ func (r *GardenerShootControlPlaneReconciler) getWorkerPoolsForCluster(cpc Contr
 		if machinePool.Spec.ClusterName != cpc.cluster.Name {
 			continue
 		}
-		if machinePool.Spec.Template.Spec.InfrastructureRef.GroupVersionKind() != infrastructurev1alpha1.GroupVersion.WithKind("GardenerWorkerPool") {
+		if machinePool.Spec.Template.Spec.InfrastructureRef.GroupKind() != infrastructurev1alpha1.GroupVersion.WithKind("GardenerWorkerPool").GroupKind() {
 			continue
 		}
 		workerRef := machinePool.Spec.Template.Spec.InfrastructureRef
@@ -339,7 +338,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcileShootControlPlaneEndpoint
 	}
 
 	patch := client.MergeFrom(cpc.shootControlPlane.DeepCopy())
-	cpc.shootControlPlane.Spec.ControlPlaneEndpoint = clusterv1beta1.APIEndpoint{
+	cpc.shootControlPlane.Spec.ControlPlaneEndpoint = clusterv1beta2.APIEndpoint{
 		Host: endpoint,
 		Port: 443,
 	}
@@ -398,7 +397,7 @@ func isKubeConfigValid(data map[string][]byte) (bool, error) {
 	return time.Now().Add(5 * time.Minute).Before(validityTimeStamp), nil
 }
 
-func newEmptyShootAccessSecret(cluster *clusterv1beta1.Cluster) *v1.Secret {
+func newEmptyShootAccessSecret(cluster *clusterv1beta2.Cluster) *v1.Secret {
 	return &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-kubeconfig", cluster.Name),
@@ -407,7 +406,7 @@ func newEmptyShootAccessSecret(cluster *clusterv1beta1.Cluster) *v1.Secret {
 				"cluster.x-k8s.io/cluster-name": cluster.Name,
 			},
 		},
-		Type: clusterv1beta1.ClusterSecretType,
+		Type: clusterv1beta2.ClusterSecretType,
 	}
 }
 

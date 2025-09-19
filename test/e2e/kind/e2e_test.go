@@ -15,11 +15,10 @@ import (
 	"github.com/gardener/gardener/pkg/utils/test/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	componentbaseconfigv1alpha1 "k8s.io/component-base/config/v1alpha1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/cluster-api-provider-gardener/api"
@@ -217,20 +216,18 @@ var _ = Describe("Manager", Ordered, Label("kind"), func() {
 				return clusterClient.Client().Create(ctx, infraClusterSpec)
 			}).Should(Succeed())
 
-			clusterSpec := &v1beta1.Cluster{
+			clusterSpec := &clusterv1beta2.Cluster{
 				ObjectMeta: metav1.ObjectMeta{Name: controlPlaneSpec.Name, Namespace: "default"},
-				Spec: v1beta1.ClusterSpec{
-					ControlPlaneRef: &v1.ObjectReference{
-						APIVersion: "controlplane.cluster.x-k8s.io/v1alpha1",
-						Kind:       "GardenerShootControlPlane",
-						Name:       controlPlaneSpec.Name,
-						Namespace:  "default",
+				Spec: clusterv1beta2.ClusterSpec{
+					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
+						APIGroup: "controlplane.cluster.x-k8s.io",
+						Kind:     "GardenerShootControlPlane",
+						Name:     controlPlaneSpec.Name,
 					},
-					InfrastructureRef: &v1.ObjectReference{
-						APIVersion: "infrastructure.cluster.x-k8s.io/v1alpha1",
-						Kind:       "GardenerShootCluster",
-						Name:       infraClusterSpec.Name,
-						Namespace:  "default",
+					InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
+						APIGroup: "infrastructure.cluster.x-k8s.io",
+						Kind:     "GardenerShootCluster",
+						Name:     infraClusterSpec.Name,
 					},
 				},
 			}
