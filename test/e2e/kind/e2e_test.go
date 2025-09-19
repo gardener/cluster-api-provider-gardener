@@ -221,13 +221,13 @@ var _ = Describe("Manager", Ordered, Label("kind"), func() {
 				Spec: clusterv1beta2.ClusterSpec{
 					ControlPlaneRef: clusterv1beta2.ContractVersionedObjectReference{
 						APIGroup: "controlplane.cluster.x-k8s.io",
-						Kind:       "GardenerShootControlPlane",
-						Name:       controlPlaneSpec.Name,
+						Kind:     "GardenerShootControlPlane",
+						Name:     controlPlaneSpec.Name,
 					},
 					InfrastructureRef: clusterv1beta2.ContractVersionedObjectReference{
 						APIGroup: "infrastructure.cluster.x-k8s.io",
-						Kind:       "GardenerShootCluster",
-						Name:       infraClusterSpec.Name,
+						Kind:     "GardenerShootCluster",
+						Name:     infraClusterSpec.Name,
 					},
 				},
 			}
