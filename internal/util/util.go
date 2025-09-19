@@ -275,12 +275,12 @@ func SyncWorkerPoolFromShootSpec(shoot *gardenercorev1beta1.Shoot, workerPool *i
 func ShootFromCluster(ctx context.Context, gardenerClient client.Client, client client.Client, cluster *clusterv1beta2.Cluster) (*gardenercorev1beta1.Shoot, error) {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "shootFromCluster")
 
-	if cluster.Spec.ControlPlaneRef == nil {
-		log.Info("ControlPlaneRef is nil, do nothing")
+	if !cluster.Spec.ControlPlaneRef.IsDefined() {
+		log.Info("ControlPlaneRef is not defined, do nothing")
 		return nil, nil
 	}
 	controlPlane := &controlplanev1alpha1.GardenerShootControlPlane{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Spec.ControlPlaneRef.Namespace, Name: cluster.Spec.ControlPlaneRef.Name}, controlPlane); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Namespace, Name: cluster.Spec.ControlPlaneRef.Name}, controlPlane); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("ControlPlane not found")
 			return nil, nil
