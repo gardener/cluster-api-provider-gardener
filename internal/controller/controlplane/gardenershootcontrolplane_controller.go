@@ -292,7 +292,7 @@ func (r *GardenerShootControlPlaneReconciler) reconcileDelete(cpc ControlPlaneCo
 func (r *GardenerShootControlPlaneReconciler) getWorkerPoolsForCluster(cpc ControlPlaneContext, c client.Client) ([]infrastructurev1alpha1.GardenerWorkerPool, error) {
 	log := runtimelog.FromContext(cpc.ctx).WithValues("operation", "getWorkerPoolsForCluster")
 	machinePools := &clusterv1beta2.MachinePoolList{}
-	workers := []infrastructurev1alpha1.GardenerWorkerPool{}
+	var workers []infrastructurev1alpha1.GardenerWorkerPool
 	if err := c.List(cpc.ctx, machinePools, client.InNamespace(cpc.cluster.Namespace)); err != nil {
 		log.Error(err, "Failed to list machine pools")
 		return nil, err
