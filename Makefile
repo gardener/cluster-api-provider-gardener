@@ -103,6 +103,10 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: setup-envtest
+setup-envtest: $(SETUP_ENVTEST) $(ENVTEST_K8S_VERSION) ## Download envtest if necessary.
+	KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)"
+
 .PHONY: test
 test: $(REPORT_COLLECTOR) $(SETUP_ENVTEST) ## Run tests.
 	@bash $(GARDENER_HACK_DIR)/test-integration.sh $$(go list ./... | grep -v /e2e)
