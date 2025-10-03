@@ -1947,25 +1947,6 @@ spec:
                             required:
                             - phase
                             type: object
-                          kubeconfig:
-                            description: |-
-                              Kubeconfig contains information about the kubeconfig credential rotation.
-
-                              Deprecated: This field is deprecated and will be removed in gardener v1.120
-                            properties:
-                              lastCompletionTime:
-                                description: LastCompletionTime is the most recent
-                                  time when the kubeconfig credential rotation was
-                                  successfully completed.
-                                format: date-time
-                                type: string
-                              lastInitiationTime:
-                                description: LastInitiationTime is the most recent
-                                  time when the kubeconfig credential rotation was
-                                  initiated.
-                                format: date-time
-                                type: string
-                            type: object
                           observability:
                             description: Observability contains information about
                               the observability credential rotation.
