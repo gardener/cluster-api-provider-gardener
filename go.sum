@@ -991,8 +991,8 @@ k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d h1:wAhiDyZ4Tdtt7e46e9M5ZSAJ/MnPG
 k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.3 h1:PouPS/YVHiGXLJTXH/mtNybmnuSvjeh92wUkqIU4uCk=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.3/go.mod h1:Ve9uj1L+deCXFrPOk1LpFXqTg7LCFzFso6PA48q/XZw=
-sigs.k8s.io/cluster-api v1.10.6 h1:0bnLTpT47R8KIvGZ3tTGek0DwMIc8fZi6IxA3Mlqq4g=
-sigs.k8s.io/cluster-api v1.10.6/go.mod h1:vymugs3Jm3gxHVMuVqdzgp6BVy/SEqQVyUg/UM7bnT4=
+sigs.k8s.io/cluster-api v1.10.7 h1:MuzeuAhLJLTgmqTitVz1XeXZLgAd4tJfnH9xitKG63A=
+sigs.k8s.io/cluster-api v1.10.7/go.mod h1:PTuQc7CgNahPlJrLNJ0q4gKdpQ4wITgeVXDiDQQv2to=
 sigs.k8s.io/controller-runtime v0.20.4 h1:X3c+Odnxz+iPTRobG4tp092+CvBU9UK0t/bRf+n0DGU=
 sigs.k8s.io/controller-runtime v0.20.4/go.mod h1:xg2XB0K5ShQzAgsoujxuKN4LNXR2LfwwHsPj7Iaw+XY=
 sigs.k8s.io/controller-tools v0.18.0 h1:rGxGZCZTV2wJreeRgqVoWab/mfcumTMmSwKzoM9xrsE=
