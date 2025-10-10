@@ -15,7 +15,7 @@ replace (
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/gardener/gardener v1.129.0
+	github.com/gardener/gardener v1.129.1
 	github.com/kcp-dev/kcp/sdk v0.28.3
 	github.com/kcp-dev/multicluster-provider v0.2.0
 	github.com/onsi/ginkgo/v2 v2.25.0
