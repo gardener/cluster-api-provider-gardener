@@ -28,14 +28,6 @@ The following dependencies have been updated:\n\
   // The following list of dependencies to ignore is updated by `make generate`.
   // DO NOT EDIT THIS SECTION MANUALLY.
   ignoreDeps: [
-    "github.com/google/cel-go",
-    "k8s.io/api",
-    "k8s.io/apimachinery",
-    "k8s.io/apiserver",
-    "k8s.io/client-go",
-    "k8s.io/code-generator",
-    "k8s.io/component-base",
-    "sigs.k8s.io/controller-runtime",
     "github.com/onsi/ginkgo/v2",
     "github.com/onsi/gomega",
     "golang.org/x/sync",
