@@ -2,22 +2,11 @@ module github.com/gardener/cluster-api-provider-gardener
 
 go 1.24.0
 
-replace (
-	github.com/google/cel-go => github.com/google/cel-go v0.22.1
-	k8s.io/api => k8s.io/api v0.32.5
-	k8s.io/apimachinery => k8s.io/apimachinery v0.32.5
-	k8s.io/apiserver => k8s.io/apiserver v0.32.5
-	k8s.io/client-go => k8s.io/client-go v0.32.5
-	k8s.io/code-generator => k8s.io/code-generator v0.32.5
-	k8s.io/component-base => k8s.io/component-base v0.32.5
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
-)
-
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/gardener/gardener v1.130.0
 	github.com/kcp-dev/kcp/sdk v0.28.3
-	github.com/kcp-dev/multicluster-provider v0.2.0
+	github.com/kcp-dev/multicluster-provider v0.2.1
 	github.com/onsi/ginkgo/v2 v2.26.0
 	github.com/onsi/gomega v1.38.2
 	github.com/valyala/fastjson v1.6.4
@@ -30,7 +19,7 @@ require (
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/cluster-api v1.10.7
 	sigs.k8s.io/controller-runtime v0.21.0
-	sigs.k8s.io/multicluster-runtime v0.20.4-alpha.7
+	sigs.k8s.io/multicluster-runtime v0.21.0-alpha.8
 )
 
 require (
@@ -47,7 +36,6 @@ require (
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
-	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/brunoga/deep v1.2.5 // indirect
@@ -102,7 +90,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20250512171935-ebb573a40077 // indirect
+	github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20250728122101-adbf20db3e51 // indirect
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
