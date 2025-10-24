@@ -86,7 +86,7 @@ func (v *GardenerWorkerPoolCustomValidator) ValidateUpdate(ctx context.Context, 
 	}
 
 	controlPlane := &controlplanev1alpha1.GardenerShootControlPlane{}
-	if err := v.Client.Get(ctx, client.ObjectKey{Name: cluster.Spec.ControlPlaneRef.Name, Namespace: cluster.Spec.ControlPlaneRef.Namespace}, controlPlane); err != nil {
+	if err := v.Client.Get(ctx, client.ObjectKey{Name: cluster.Spec.ControlPlaneRef.Name, Namespace: cluster.Namespace}, controlPlane); err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
 

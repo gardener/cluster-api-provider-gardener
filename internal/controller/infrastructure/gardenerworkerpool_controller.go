@@ -16,8 +16,8 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/exp/api/v1beta1"
+	"k8s.io/utils/ptr"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -112,7 +112,7 @@ func (r *GardenerWorkerPoolReconciler) Reconcile(ctx context.Context, req mcreco
 	return r.reconcile(ctx, c, workerPool, machinePool, cluster)
 }
 
-func (r *GardenerWorkerPoolReconciler) syncSpecs(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, cluster *clusterv1beta1.Cluster) error {
+func (r *GardenerWorkerPoolReconciler) syncSpecs(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, cluster *clusterv1beta2.Cluster) error {
 	log := runtimelog.FromContext(ctx).WithValues("gardenerworkerpool", client.ObjectKeyFromObject(workerPool), "operation", "syncSpecs")
 
 	shoot, err := providerutil.ShootFromCluster(ctx, r.GardenerClient, c, cluster)
@@ -195,7 +195,7 @@ func createClientFromKubeconfig(kubeconfig []byte, scheme *runtime.Scheme) (clie
 	return k8sClient, nil
 }
 
-func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *v1beta1.MachinePool, cluster *clusterv1beta1.Cluster) error {
+func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *clusterv1beta2.MachinePool, cluster *clusterv1beta2.Cluster) error {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "updateStatus")
 
 	// Get the secret for the shoot cluster to get the nodes
@@ -257,7 +257,7 @@ func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, c clien
 		return err
 	}
 
-	machinePool.Status.Replicas = int32(len(workerPool.Spec.ProviderIDList)) // #nosec G115
+	machinePool.Status.Replicas = ptr.To(int32(len(workerPool.Spec.ProviderIDList))) // #nosec G115
 	if err := c.Status().Update(ctx, machinePool); err != nil {
 		log.Error(err, "Failed to update MachinePool replicas")
 		return err
@@ -266,7 +266,7 @@ func (r *GardenerWorkerPoolReconciler) updateStatus(ctx context.Context, c clien
 	return nil
 }
 
-func (r *GardenerWorkerPoolReconciler) reconcile(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *v1beta1.MachinePool, cluster *clusterv1beta1.Cluster) (ctrl.Result, error) {
+func (r *GardenerWorkerPoolReconciler) reconcile(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool, machinePool *clusterv1beta2.MachinePool, cluster *clusterv1beta2.Cluster) (ctrl.Result, error) {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "reconcile")
 	if err := r.syncSpecs(ctx, c, workerPool, cluster); err != nil {
 		log.Error(err, "Failed to sync GardenerWorkerPool spec")
