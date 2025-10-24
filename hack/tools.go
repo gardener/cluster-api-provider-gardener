@@ -14,4 +14,8 @@ import (
 	_ "github.com/gardener/gardener/hack"
 	_ "github.com/valyala/fastjson"
 	_ "k8s.io/cluster-bootstrap"
+
+	// TODO: Remove after conflict between `ENSURE_CAPI_MOD` (cluster-api) and `go mod tidy` with this indirect dependency
+	//  has been resolved.
+	_ "github.com/google/gofuzz"
 )

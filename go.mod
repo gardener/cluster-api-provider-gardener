@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/gardener/gardener v1.130.0
+	github.com/google/gofuzz v1.2.0
 	github.com/kcp-dev/kcp/sdk v0.28.3
 	github.com/kcp-dev/multicluster-provider v0.2.1
 	github.com/onsi/ginkgo/v2 v2.26.0
