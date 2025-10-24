@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/gardener/gardener v1.130.0
+	github.com/google/gofuzz v1.2.0
 	github.com/kcp-dev/kcp/sdk v0.28.3
 	github.com/kcp-dev/multicluster-provider v0.2.1
 	github.com/onsi/ginkgo/v2 v2.26.0
@@ -19,7 +20,7 @@ require (
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/cluster-api v1.10.7
 	sigs.k8s.io/controller-runtime v0.21.0
-	sigs.k8s.io/multicluster-runtime v0.21.0-alpha.8
+	sigs.k8s.io/multicluster-runtime v0.21.0-alpha.9
 )
 
 require (
@@ -74,7 +75,6 @@ require (
 	github.com/google/cel-go v0.25.0 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20250501235452-c0086092b71a // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
