@@ -290,6 +290,9 @@ spec:
                         items:
                           type: string
                         type: array
+                      initialNodeGroupBackoffDuration:
+                        description: 'InitialNodeGroupBackoffDuration is the duration of first backoff after a new node failed to start (default: 5m).'
+                        type: string
                       maxDrainParallelism:
                         description: |-
                           MaxDrainParallelism specifies the maximum number of nodes needing drain, that can be drained and deleted in parallel.
@@ -308,6 +311,9 @@ spec:
                         description: 'MaxGracefulTerminationSeconds is the number of seconds CA waits for pod termination when trying to scale down a node (default: 600).'
                         format: int32
                         type: integer
+                      maxNodeGroupBackoffDuration:
+                        description: 'MaxNodeGroupBackoffDuration is the maximum backoff duration for a NodeGroup after new nodes failed to start (default: 30m).'
+                        type: string
                       maxNodeProvisionTime:
                         description: 'MaxNodeProvisionTime defines how long CA waits for node to be provisioned (default: 20 mins).'
                         type: string
@@ -319,6 +325,9 @@ spec:
                         type: integer
                       newPodScaleUpDelay:
                         description: 'NewPodScaleUpDelay specifies how long CA should ignore newly created pods before they have to be considered for scale-up (default: 0s).'
+                        type: string
+                      nodeGroupBackoffResetTimeout:
+                        description: 'NodeGroupBackoffResetTimeout is the time after last failed scale-up when the backoff duration is reset (default: 3h).'
                         type: string
                       scaleDownDelayAfterAdd:
                         description: 'ScaleDownDelayAfterAdd defines how long after scale up that scale down evaluation resumes (default: 1 hour).'
@@ -1677,12 +1686,10 @@ spec:
                                   PendingWorkersRollouts contains the name of a worker pool and the initiation time of their last rollout due to
                                   credentials rotation.
                                 items:
-                                  description: |-
-                                    PendingWorkersRollout contains the name of a worker pool and the initiation time of their last rollout due to
-                                    credentials rotation.
+                                  description: PendingWorkersRollout contains the name of a worker pool and the initiation time of their last rollout.
                                   properties:
                                     lastInitiationTime:
-                                      description: LastInitiationTime is the most recent time when the credential rotation was initiated.
+                                      description: LastInitiationTime is the most recent time when the worker rollout was initiated.
                                       format: date-time
                                       type: string
                                     name:
@@ -1780,12 +1787,10 @@ spec:
                                   PendingWorkersRollouts contains the name of a worker pool and the initiation time of their last rollout due to
                                   credentials rotation.
                                 items:
-                                  description: |-
-                                    PendingWorkersRollout contains the name of a worker pool and the initiation time of their last rollout due to
-                                    credentials rotation.
+                                  description: PendingWorkersRollout contains the name of a worker pool and the initiation time of their last rollout.
                                   properties:
                                     lastInitiationTime:
-                                      description: LastInitiationTime is the most recent time when the credential rotation was initiated.
+                                      description: LastInitiationTime is the most recent time when the worker rollout was initiated.
                                       format: date-time
                                       type: string
                                     name:
@@ -1939,6 +1944,26 @@ spec:
                       - progress
                       - state
                       - type
+                    type: object
+                  manualWorkerPoolRollout:
+                    description: ManualWorkerPoolRollout contains information about the worker pool rollout progress.
+                    properties:
+                      pendingWorkersRollouts:
+                        description: PendingWorkersRollouts contains the names of the worker pools that are still pending rollout.
+                        items:
+                          description: PendingWorkersRollout contains the name of a worker pool and the initiation time of their last rollout.
+                          properties:
+                            lastInitiationTime:
+                              description: LastInitiationTime is the most recent time when the worker rollout was initiated.
+                              format: date-time
+                              type: string
+                            name:
+                              description: Name is the name of a worker pool.
+                              type: string
+                          required:
+                            - name
+                          type: object
+                        type: array
                     type: object
                   migrationStartTime:
                     description: MigrationStartTime is the time when a migration to a different seed was initiated.
