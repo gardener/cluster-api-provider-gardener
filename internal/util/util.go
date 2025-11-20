@@ -13,8 +13,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	expclusterv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -27,7 +26,7 @@ import (
 )
 
 // ShootNameFromCAPIResources generates a NamespacedName for the Shoot resource based on the provided CAPI resources.
-func ShootNameFromCAPIResources(cluster clusterv1beta1.Cluster, controlPlane controlplanev1alpha1.GardenerShootControlPlane) types.NamespacedName {
+func ShootNameFromCAPIResources(cluster clusterv1beta2.Cluster, controlPlane controlplanev1alpha1.GardenerShootControlPlane) types.NamespacedName {
 	return types.NamespacedName{
 		Name:      cluster.Name,
 		Namespace: controlPlane.Spec.ProjectNamespace,
@@ -36,7 +35,7 @@ func ShootNameFromCAPIResources(cluster clusterv1beta1.Cluster, controlPlane con
 
 // ShootFromCAPIResources creates a new Shoot resource based on the provided CAPI resources.
 func ShootFromCAPIResources(
-	capiCluster clusterv1beta1.Cluster,
+	capiCluster clusterv1beta2.Cluster,
 	controlPlane controlplanev1alpha1.GardenerShootControlPlane,
 	infraCluster infrastructurev1alpha1.GardenerShootCluster,
 	workerPools []infrastructurev1alpha1.GardenerWorkerPool,
@@ -273,15 +272,15 @@ func SyncWorkerPoolFromShootSpec(shoot *gardenercorev1beta1.Shoot, workerPool *i
 }
 
 // ShootFromCluster retrieves the Shoot resource from the Gardener API based on the provided Cluster and ControlPlane references.
-func ShootFromCluster(ctx context.Context, gardenerClient client.Client, client client.Client, cluster *clusterv1beta1.Cluster) (*gardenercorev1beta1.Shoot, error) {
+func ShootFromCluster(ctx context.Context, gardenerClient client.Client, client client.Client, cluster *clusterv1beta2.Cluster) (*gardenercorev1beta1.Shoot, error) {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "shootFromCluster")
 
-	if cluster.Spec.ControlPlaneRef == nil {
-		log.Info("ControlPlaneRef is nil, do nothing")
+	if !cluster.Spec.ControlPlaneRef.IsDefined() {
+		log.Info("ControlPlaneRef is not defined, do nothing")
 		return nil, nil
 	}
 	controlPlane := &controlplanev1alpha1.GardenerShootControlPlane{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Spec.ControlPlaneRef.Namespace, Name: cluster.Spec.ControlPlaneRef.Name}, controlPlane); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Namespace, Name: cluster.Spec.ControlPlaneRef.Name}, controlPlane); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("ControlPlane not found")
 			return nil, nil
@@ -302,11 +301,11 @@ func ShootFromCluster(ctx context.Context, gardenerClient client.Client, client 
 }
 
 // GetMachinePoolForWorkerPool retrieves the MachinePool that owns the given GardenerWorkerPool.
-func GetMachinePoolForWorkerPool(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool) (*expclusterv1.MachinePool, error) {
+func GetMachinePoolForWorkerPool(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool) (*clusterv1beta2.MachinePool, error) {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "GetMachinePoolForWorkerPool")
-	machinePool := &expclusterv1.MachinePool{}
+	machinePool := &clusterv1beta2.MachinePool{}
 	for _, owner := range workerPool.OwnerReferences {
-		if owner.Kind == "MachinePool" && owner.APIVersion == expclusterv1.GroupVersion.String() {
+		if owner.Kind == "MachinePool" && owner.APIVersion == clusterv1beta2.GroupVersion.String() {
 			if err := c.Get(ctx, client.ObjectKey{Namespace: workerPool.Namespace, Name: owner.Name}, machinePool); err != nil {
 				if apierrors.IsNotFound(err) {
 					log.Info("MachinePool not found or already deleted")

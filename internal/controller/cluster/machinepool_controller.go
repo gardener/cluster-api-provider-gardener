@@ -10,8 +10,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/exp/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,7 +41,7 @@ func (r *MachinePoolController) Reconcile(ctx context.Context, req mcreconcile.R
 
 	log.Info("Getting MachinePool")
 
-	machinePool := v1beta1.MachinePool{}
+	machinePool := clusterv1beta2.MachinePool{}
 	if err := c.Get(ctx, req.NamespacedName, &machinePool); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("resource no longer exists")
@@ -58,7 +57,7 @@ func (r *MachinePoolController) Reconcile(ctx context.Context, req mcreconcile.R
 	}
 
 	// Get CLuster and ensure the cluster owner ref on the machinePool
-	cluster := &apiv1beta1.Cluster{}
+	cluster := &clusterv1beta2.Cluster{}
 	if err := c.Get(ctx, client.ObjectKey{
 		Name:      clusterName,
 		Namespace: machinePool.Namespace,
@@ -75,8 +74,8 @@ func (r *MachinePoolController) Reconcile(ctx context.Context, req mcreconcile.R
 		return ctrl.Result{}, err
 	}
 
-	if machinePool.Spec.Template.Spec.InfrastructureRef.GroupVersionKind() != infrastructurev1alpha1.GroupVersion.WithKind("GardenerWorkerPool") {
-		log.Info(fmt.Sprintf("%s is not a GardenerWorkerPool", machinePool.Spec.Template.Spec.InfrastructureRef.GroupVersionKind()))
+	if infraRefGroupKind := machinePool.Spec.Template.Spec.InfrastructureRef.GroupKind(); infraRefGroupKind != infrastructurev1alpha1.GroupVersion.WithKind("GardenerWorkerPool").GroupKind() {
+		log.Info(fmt.Sprintf("%s is not a GardenerWorkerPool", infraRefGroupKind))
 		return ctrl.Result{}, nil
 	}
 
@@ -100,7 +99,7 @@ func (r *MachinePoolController) Reconcile(ctx context.Context, req mcreconcile.R
 	return ctrl.Result{}, nil
 }
 
-func ensureMachinePoolOwnerRef(ctx context.Context, c client.Client, obj metav1.Object, machinePool *v1beta1.MachinePool) error {
+func ensureMachinePoolOwnerRef(ctx context.Context, c client.Client, obj metav1.Object, machinePool *clusterv1beta2.MachinePool) error {
 	desiredOwnerRef := metav1.OwnerReference{
 		APIVersion: machinePool.APIVersion,
 		Kind:       machinePool.Kind,
@@ -126,6 +125,6 @@ func ensureMachinePoolOwnerRef(ctx context.Context, c client.Client, obj metav1.
 // SetupWithManager sets up the controller with the Manager.
 func (r *MachinePoolController) SetupWithManager(mgr mcmanager.Manager) error {
 	return mcbuilder.ControllerManagedBy(mgr).
-		For(&v1beta1.MachinePool{}).
+		For(&clusterv1beta2.MachinePool{}).
 		Complete(r)
 }

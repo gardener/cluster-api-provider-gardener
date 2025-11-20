@@ -79,7 +79,7 @@ func (v *GardenerShootClusterCustomValidator) ValidateUpdate(ctx context.Context
 	controlPlane := &controlplanev1alpha1.GardenerShootControlPlane{}
 	if err := v.Client.Get(ctx, types.NamespacedName{
 		Name:      cluster.Spec.ControlPlaneRef.Name,
-		Namespace: cluster.Spec.ControlPlaneRef.Namespace,
+		Namespace: cluster.Namespace,
 	}, controlPlane); err != nil {
 		return nil, client.IgnoreNotFound(err)
 	}
