@@ -2,7 +2,7 @@ module github.com/gardener/cluster-api-provider-gardener
 
 go 1.24.5
 
-toolchain go1.24.10
+toolchain go1.25.5
 
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
