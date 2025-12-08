@@ -11,7 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,7 +43,7 @@ func (r *ClusterController) Reconcile(ctx context.Context, req mcreconcile.Reque
 	c := cl.GetClient()
 
 	log.Info("Getting Cluster")
-	cluster := v1beta1.Cluster{}
+	cluster := clusterv1beta2.Cluster{}
 	if err := c.Get(ctx, req.NamespacedName, &cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("resource no longer exists")
@@ -53,7 +53,7 @@ func (r *ClusterController) Reconcile(ctx context.Context, req mcreconcile.Reque
 	}
 
 	patch := client.MergeFrom(cluster.DeepCopy())
-	if controllerutil.AddFinalizer(&cluster, v1beta1.ClusterFinalizer) {
+	if controllerutil.AddFinalizer(&cluster, clusterv1beta2.ClusterFinalizer) {
 		if err := c.Patch(ctx, &cluster, patch); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -62,8 +62,8 @@ func (r *ClusterController) Reconcile(ctx context.Context, req mcreconcile.Reque
 	// Check if the cluster is being deleted
 	if !cluster.DeletionTimestamp.IsZero() {
 		log.Info("Cluster is being deleted")
-		if cluster.Status.Phase != string(v1beta1.ClusterPhaseDeleting) {
-			cluster.Status.Phase = string(v1beta1.ClusterPhaseDeleting)
+		if cluster.Status.Phase != string(clusterv1beta2.ClusterPhaseDeleting) {
+			cluster.Status.Phase = string(clusterv1beta2.ClusterPhaseDeleting)
 			if err := c.Status().Update(ctx, &cluster); err != nil {
 				log.Error(err, "unable to update cluster status")
 				return ctrl.Result{}, err
@@ -96,7 +96,7 @@ func (r *ClusterController) Reconcile(ctx context.Context, req mcreconcile.Reque
 
 		if apierrors.IsNotFound(gscpErr) && apierrors.IsNotFound(infrErr) {
 			log.Info("Cluster deletion complete")
-			controllerutil.RemoveFinalizer(&cluster, v1beta1.ClusterFinalizer)
+			controllerutil.RemoveFinalizer(&cluster, clusterv1beta2.ClusterFinalizer)
 			if err := c.Update(ctx, &cluster); err != nil {
 				log.Error(err, "unable to remove finalizer")
 				return ctrl.Result{}, err
@@ -140,14 +140,16 @@ func (r *ClusterController) Reconcile(ctx context.Context, req mcreconcile.Reque
 		return ctrl.Result{}, err
 	}
 
-	cluster.Status = v1beta1.ClusterStatus{
-		Phase:               string(v1beta1.ClusterPhaseProvisioned),
-		InfrastructureReady: infraCluster.Status.Ready,
-		ControlPlaneReady:   gscp.Status.Initialized,
-		ObservedGeneration:  cluster.Generation,
+	cluster.Status = clusterv1beta2.ClusterStatus{
+		Phase: string(clusterv1beta2.ClusterPhaseProvisioned),
+		Conditions: []metav1.Condition{
+			{Type: clusterv1beta2.ClusterInfrastructureReadyCondition, Status: metav1.ConditionTrue, Reason: clusterv1beta2.ReadyReason},
+			{Type: clusterv1beta2.ClusterControlPlaneInitializedCondition, Status: metav1.ConditionTrue, Reason: clusterv1beta2.ClusterControlPlaneInitializedReason},
+		},
+		ObservedGeneration: cluster.Generation,
 	}
 	if !gscp.Status.Initialized || !infraCluster.Status.Ready {
-		cluster.Status.Phase = string(v1beta1.ClusterPhaseProvisioning)
+		cluster.Status.Phase = string(clusterv1beta2.ClusterPhaseProvisioning)
 	}
 	if err := c.Status().Update(ctx, &cluster); err != nil {
 		log.Error(err, "unable to update cluster status")
@@ -157,7 +159,7 @@ func (r *ClusterController) Reconcile(ctx context.Context, req mcreconcile.Reque
 	return ctrl.Result{}, nil
 }
 
-func ensureOwnerRef(ctx context.Context, c client.Client, obj metav1.Object, cluster *v1beta1.Cluster) error {
+func ensureOwnerRef(ctx context.Context, c client.Client, obj metav1.Object, cluster *clusterv1beta2.Cluster) error {
 	desiredOwnerRef := metav1.OwnerReference{
 		APIVersion: cluster.APIVersion,
 		Kind:       cluster.Kind,
@@ -167,7 +169,7 @@ func ensureOwnerRef(ctx context.Context, c client.Client, obj metav1.Object, clu
 	}
 
 	if util.HasExactOwnerRef(obj.GetOwnerReferences(), desiredOwnerRef) &&
-		obj.GetLabels()[v1beta1.ClusterNameLabel] == cluster.Name {
+		obj.GetLabels()[clusterv1beta2.ClusterNameLabel] == cluster.Name {
 		return nil
 	}
 
@@ -179,7 +181,7 @@ func ensureOwnerRef(ctx context.Context, c client.Client, obj metav1.Object, clu
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	labels[v1beta1.ClusterNameLabel] = cluster.Name
+	labels[clusterv1beta2.ClusterNameLabel] = cluster.Name
 	obj.SetLabels(labels)
 
 	// Update the object in the cluster
@@ -195,7 +197,7 @@ func (r *ClusterController) SetupWithManager(mgr mcmanager.Manager) error {
 		r.Manager = mgr
 	}
 	return mcbuilder.ControllerManagedBy(mgr).
-		For(&v1beta1.Cluster{}).
+		For(&clusterv1beta2.Cluster{}).
 		Named("cluster").
 		Owns(&controlplanev1alpha1.GardenerShootControlPlane{}).
 		Owns(&infrastructurev1alpha1.GardenerShootCluster{}).

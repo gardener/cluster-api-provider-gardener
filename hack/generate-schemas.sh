@@ -29,7 +29,7 @@ cp ${CAPI_DIR}/config/crd/bases/cluster.x-k8s.io_machinepools.yaml ${TMP_DIR}/ca
 
 echo "🚫 Removing non stored / served CAPI CRD versions"
 for capi_crd in ${TMP_DIR}/capi/*.yaml; do
-  yq -i '.spec.versions |= map(select(.served == true or .storage == true))' "${capi_crd}"
+  yq -i '.spec.versions |= map(select(.served == true and .storage == true))' "${capi_crd}"
 done
 
 echo "⚙️ Generating APIResouceSchemas for CAPI"

@@ -14,7 +14,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1beta2 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -94,7 +94,7 @@ func (r *GardenerShootClusterReconciler) reconcileDelete(ctx context.Context, c 
 	log := runtimelog.FromContext(ctx).WithValues("operation", "delete")
 
 	patch := client.MergeFrom(infraCluster.DeepCopy())
-	if controllerutil.RemoveFinalizer(infraCluster, v1beta1.ClusterFinalizer) {
+	if controllerutil.RemoveFinalizer(infraCluster, clusterv1beta2.ClusterFinalizer) {
 		if err := c.Patch(ctx, infraCluster, patch); err != nil {
 			log.Error(err, "Failed to patch GardenerShootCluster finalizer")
 			return ctrl.Result{}, err
@@ -105,13 +105,13 @@ func (r *GardenerShootClusterReconciler) reconcileDelete(ctx context.Context, c 
 	return ctrl.Result{}, nil
 }
 
-func (r *GardenerShootClusterReconciler) reconcile(ctx context.Context, c client.Client, infraCluster *infrastructurev1alpha1.GardenerShootCluster, cluster *v1beta1.Cluster) (ctrl.Result, error) {
+func (r *GardenerShootClusterReconciler) reconcile(ctx context.Context, c client.Client, infraCluster *infrastructurev1alpha1.GardenerShootCluster, cluster *clusterv1beta2.Cluster) (ctrl.Result, error) {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "reconcile")
 
 	log.Info("Adding finalizer to GardenerShootCluster")
 	patch := client.MergeFrom(infraCluster.DeepCopy())
 	// TODO(tobschli): This clashes with the finalizer that CAPI uses. Maybe we do not need a finalizer at all?
-	if controllerutil.AddFinalizer(infraCluster, v1beta1.ClusterFinalizer) {
+	if controllerutil.AddFinalizer(infraCluster, clusterv1beta2.ClusterFinalizer) {
 		if err := c.Patch(ctx, infraCluster, patch); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -133,7 +133,7 @@ func (r *GardenerShootClusterReconciler) reconcile(ctx context.Context, c client
 	return ctrl.Result{}, nil
 }
 
-func (r *GardenerShootClusterReconciler) updateStatus(ctx context.Context, c client.Client, infraCluster *infrastructurev1alpha1.GardenerShootCluster, cluster *v1beta1.Cluster) error {
+func (r *GardenerShootClusterReconciler) updateStatus(ctx context.Context, c client.Client, infraCluster *infrastructurev1alpha1.GardenerShootCluster, cluster *clusterv1beta2.Cluster) error {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "updateStatus")
 
 	shoot, err := providerutil.ShootFromCluster(ctx, r.GardenerClient, c, cluster)
@@ -189,7 +189,7 @@ func (r *GardenerShootClusterReconciler) updateStatus(ctx context.Context, c cli
 	return nil
 }
 
-func (r *GardenerShootClusterReconciler) syncSpecs(ctx context.Context, c client.Client, infraCluster *infrastructurev1alpha1.GardenerShootCluster, cluster *v1beta1.Cluster) error {
+func (r *GardenerShootClusterReconciler) syncSpecs(ctx context.Context, c client.Client, infraCluster *infrastructurev1alpha1.GardenerShootCluster, cluster *clusterv1beta2.Cluster) error {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "syncSpecs")
 
 	shoot, err := providerutil.ShootFromCluster(ctx, r.GardenerClient, c, cluster)
