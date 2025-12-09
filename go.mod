@@ -12,7 +12,7 @@ require (
 	github.com/kcp-dev/multicluster-provider v0.2.1
 	github.com/onsi/ginkgo/v2 v2.27.1
 	github.com/onsi/gomega v1.38.2
-	github.com/valyala/fastjson v1.6.4
+	github.com/valyala/fastjson v1.6.5
 	golang.org/x/sync v0.18.0
 	k8s.io/api v0.34.1
 	k8s.io/apimachinery v0.34.1
