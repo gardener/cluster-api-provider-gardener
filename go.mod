@@ -9,7 +9,7 @@ require (
 	github.com/gardener/gardener v1.132.3
 	github.com/google/gofuzz v1.2.0
 	github.com/kcp-dev/kcp/sdk v0.28.3
-	github.com/kcp-dev/multicluster-provider v0.2.1
+	github.com/kcp-dev/multicluster-provider v0.3.1
 	github.com/onsi/ginkgo/v2 v2.27.1
 	github.com/onsi/gomega v1.38.2
 	github.com/valyala/fastjson v1.6.5
@@ -22,7 +22,7 @@ require (
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/cluster-api v1.11.4
 	sigs.k8s.io/controller-runtime v0.22.4
-	sigs.k8s.io/multicluster-runtime v0.21.0-alpha.9
+	sigs.k8s.io/multicluster-runtime v0.22.4-beta.1
 )
 
 require (
@@ -93,8 +93,9 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.13-0.20220915233716-71ac16282d12 // indirect
-	github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20250728122101-adbf20db3e51 // indirect
+	github.com/kcp-dev/apimachinery/v2 v2.29.0 // indirect
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5 // indirect
+	github.com/kcp-dev/sdk v0.29.0 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/labstack/echo/v4 v4.13.4 // indirect
