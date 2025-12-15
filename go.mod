@@ -9,20 +9,20 @@ require (
 	github.com/gardener/gardener v1.132.3
 	github.com/google/gofuzz v1.2.0
 	github.com/kcp-dev/kcp/sdk v0.28.3
-	github.com/kcp-dev/multicluster-provider v0.2.1
+	github.com/kcp-dev/multicluster-provider v0.3.3
 	github.com/onsi/ginkgo/v2 v2.27.1
 	github.com/onsi/gomega v1.38.2
 	github.com/valyala/fastjson v1.6.5
 	golang.org/x/sync v0.18.0
-	k8s.io/api v0.34.1
-	k8s.io/apimachinery v0.34.1
-	k8s.io/client-go v0.34.1
+	k8s.io/api v0.34.2
+	k8s.io/apimachinery v0.34.2
+	k8s.io/client-go v0.34.2
 	k8s.io/cluster-bootstrap v0.34.1
-	k8s.io/component-base v0.34.1
+	k8s.io/component-base v0.34.2
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/cluster-api v1.11.4
 	sigs.k8s.io/controller-runtime v0.22.4
-	sigs.k8s.io/multicluster-runtime v0.21.0-alpha.9
+	sigs.k8s.io/multicluster-runtime v0.22.4-beta.1
 )
 
 require (
@@ -93,8 +93,9 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.13-0.20220915233716-71ac16282d12 // indirect
-	github.com/kcp-dev/apimachinery/v2 v2.0.1-0.20250728122101-adbf20db3e51 // indirect
+	github.com/kcp-dev/apimachinery/v2 v2.29.1-0.20251209121225-cf3c0b624983 // indirect
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5 // indirect
+	github.com/kcp-dev/sdk v0.28.1-0.20251209130449-436a0347809b // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/labstack/echo/v4 v4.13.4 // indirect
@@ -197,15 +198,15 @@ require (
 	helm.sh/helm/v3 v3.19.1 // indirect
 	istio.io/api v1.27.3 // indirect
 	istio.io/client-go v1.27.2 // indirect
-	k8s.io/apiextensions-apiserver v0.34.1 // indirect
-	k8s.io/apiserver v0.34.1 // indirect
+	k8s.io/apiextensions-apiserver v0.34.2 // indirect
+	k8s.io/apiserver v0.34.2 // indirect
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.5.1 // indirect
-	k8s.io/code-generator v0.34.1 // indirect
+	k8s.io/code-generator v0.34.2 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250820003526-c297c0c1eb9d // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/kms v0.34.1 // indirect
+	k8s.io/kms v0.34.2 // indirect
 	k8s.io/kube-aggregator v0.34.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
 	k8s.io/kubelet v0.34.1 // indirect
