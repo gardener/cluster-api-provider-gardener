@@ -13,6 +13,7 @@ data:
         ready
         hosts {
           172.18.0.2 garden.local.gardener.cloud
+          172.18.0.2 registry.local.gardener.cloud
           172.18.0.2 gardener.virtual-garden.local.gardener.cloud
           172.18.0.2 api.virtual-garden.local.gardener.cloud
           172.18.0.2 dashboard.ingress.runtime-garden.local.gardener.cloud
