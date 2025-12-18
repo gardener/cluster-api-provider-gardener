@@ -16,7 +16,7 @@
   ],
   postUpgradeTasks: {
     commands: ['make generate'],
-    fileFilters: ['config/crd/**', 'schemas/**', '.github/renovate.json5'],
+    fileFilters: ['config/crd/**/*', 'schemas/**/*', '.github/renovate.json5'],
   },
   prFooter: "**Release note**:\n\
 ```other dependency\n\
