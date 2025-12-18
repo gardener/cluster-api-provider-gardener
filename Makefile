@@ -294,7 +294,7 @@ $(CAPI): $(LOCALBIN)
 .PHONY: apigen
 apigen: $(APIGEN) ## Download apigen locally if necessary.
 $(APIGEN): $(LOCALBIN)
-	$(call go-install-tool,$(APIGEN),github.com/kcp-dev/kcp/sdk/cmd/apigen,$(KCP_VERSION))
+	$(call go-install-tool,$(APIGEN),github.com/kcp-dev/sdk/cmd/apigen,$(KCP_VERSION))
 
 .PHONY: kcp
 kcp: $(KCP) ## Download kcp locally if necessary.
