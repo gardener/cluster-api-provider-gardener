@@ -11,7 +11,7 @@ HACK_DIR            := $(REPO_ROOT)/hack
 # Image URL to use all building/pushing image targets
 IMG                 ?= localhost:5001/cluster-api-provider-gardener/controller:latest
 GARDENER_KUBECONFIG ?= ./bin/gardener/example/provider-local/seed-kind/base/kubeconfig
-RUNTIME_KUBECONFIG ?= $(GARDENER_KUBECONFIG)
+RUNTIME_KUBECONFIG  ?= $(GARDENER_KUBECONFIG)
 
 GARDENER_DIR        ?= $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener)
 CAPI_DIR            ?= $(shell go list -m -f '{{.Dir}}' sigs.k8s.io/cluster-api)
@@ -93,7 +93,7 @@ generate-schemas: apigen $(YQ) $(CAPI) ## Generate OpenAPI schemas.
 
 .PHONY: check
 check: generate sast ## Run generators, formatters and linters and check whether files have been modified.
-	@git diff --quiet || ( echo "Files have been modified. Need to run 'make generate'." && exit 1 )
+	@git diff --quiet || ( echo "Files have been modified. Need to run 'make generate'. Changed files:" && git diff --name-only && exit 1 )
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
