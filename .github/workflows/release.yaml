@@ -15,7 +15,7 @@ jobs:
   build:
     uses: ./.github/workflows/build.yaml
     permissions:
-      contents: write
+      contents: read
       id-token: write
       packages: write
     with:
@@ -25,7 +25,6 @@ jobs:
     uses: gardener/cc-utils/.github/workflows/release.yaml@master
     needs:
       - build
-    secrets: inherit
     permissions:
       contents: write
       id-token: write
