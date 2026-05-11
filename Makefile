@@ -85,7 +85,7 @@ deepcopy: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, 
 
 .PHONY: generate
 generate: manifests deepcopy fmt lint-fix format vet generate-schemas $(YQ) ## Generate and reformat code.
-	@GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) ./hack/generate-renovate-ignore-deps.sh
+	@ARRAY_KEY=ignoreDeps GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) RENOVATE_CONFIG=$(REPO_ROOT)/.github/renovate.json5 bash $(GARDENER_HACK_DIR)/generate-renovate-ignore-deps.sh
 
 .PHONY: generate-schemas
 generate-schemas: apigen $(YQ) $(CAPI) ## Generate OpenAPI schemas.
