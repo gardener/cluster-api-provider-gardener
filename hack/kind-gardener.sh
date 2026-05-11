@@ -10,6 +10,8 @@ path="$2"
 cd "$path"
 chmod +rw . -R
 chmod +rwx ./hack -R
+chmod +rwx ./dev-setup -R
+rm -f go.work go.work.sum
 
 case $command in
   up)
