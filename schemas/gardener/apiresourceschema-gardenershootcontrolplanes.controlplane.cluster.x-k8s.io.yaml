@@ -190,6 +190,25 @@ spec:
                     items:
                       description: DNSProvider contains information about a DNS provider.
                       properties:
+                        credentialsRef:
+                          description: |-
+                            CredentialsRef is a reference to a resource providing credentials for the DNS provider.
+                            Supported resources are Secret and WorkloadIdentity.
+                          properties:
+                            apiVersion:
+                              description: apiVersion is the API version of the referent
+                              type: string
+                            kind:
+                              description: 'kind is the kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                              type: string
+                            name:
+                              description: 'name is the name of the referent; More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                              type: string
+                          required:
+                            - kind
+                            - name
+                          type: object
+                          x-kubernetes-map-type: atomic
                         domains:
                           description: |-
                             Domains contains information about which domains shall be included/excluded for this provider.
@@ -221,6 +240,9 @@ spec:
                             provider. When not specified, the Gardener will use the cloud provider credentials referenced
                             by the Shoot and try to find respective credentials there (primary provider only). Specifying this field may override
                             this behavior, i.e. forcing the Gardener to only look into the given secret.
+
+                            Deprecated: This field is deprecated and will be forbidden starting from Kubernetes 1.35. Please use `CredentialsRef` instead.
+                            Until removed, this field is synced with the `CredentialsRef` field when it refers to a secret.
                           type: string
                         type:
                           description: Type is the DNS provider type.
@@ -276,6 +298,9 @@ spec:
                   clusterAutoscaler:
                     description: ClusterAutoscaler contains the configuration flags for the Kubernetes cluster autoscaler.
                     properties:
+                      emitPerNodeGroupMetrics:
+                        description: 'EmitPerNodeGroupMetrics emits additional per node group metrics (default: false).'
+                        type: boolean
                       expander:
                         description: |-
                           Expander defines the algorithm to use during scale up (default: least-waste).
@@ -287,12 +312,18 @@ spec:
                       ignoreTaints:
                         description: |-
                           IgnoreTaints specifies a list of taint keys to ignore in node templates when considering to scale a node group.
-                          Deprecated: Ignore taints are deprecated as of K8S 1.29 and treated as startup taints
+
+                          Deprecated: Ignore taints are deprecated and treated as startup taints
                         items:
                           type: string
                         type: array
                       initialNodeGroupBackoffDuration:
                         description: 'InitialNodeGroupBackoffDuration is the duration of first backoff after a new node failed to start (default: 5m).'
+                        type: string
+                      maxBinpackingTime:
+                        description: |-
+                          MaxBinpackingTime is the maximum time spent on binpacking for a single scale-up.
+                          If binpacking is limited by this, scale-up continues with the already calculated scale-up options (default: 5m).
                         type: string
                       maxDrainParallelism:
                         description: |-
@@ -543,13 +574,27 @@ spec:
                           of the API server should be allowed (flag `--anonymous-auth`).
                           See: https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
 
-                          Deprecated: This field is deprecated and will be removed in a future release.
+                          Deprecated: This field is deprecated and will be removed after support for Kubernetes v1.34 is dropped.
+                          This field is forbidden for clusters with Kubernetes version >= 1.35.
                           Please use anonymous authentication configuration instead.
-                          For more information see: https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-authenticator-configuration
                         type: boolean
                       encryptionConfig:
                         description: EncryptionConfig contains customizable encryption configuration of the Kube API server.
                         properties:
+                          provider:
+                            description: Provider contains information about the encryption provider.
+                            properties:
+                              type:
+                                description: |-
+                                  Type contains the type of the encryption provider.
+
+                                  Supported types:
+                                    - "aescbc"
+                                    - "aesgcm"
+                                    - "secretbox"
+                                  Defaults to aescbc.
+                                type: string
+                            type: object
                           resources:
                             description: |-
                               Resources contains the list of resources that shall be encrypted in addition to secrets.
@@ -560,7 +605,7 @@ spec:
                               type: string
                             type: array
                         required:
-                          - resources
+                          - provider
                         type: object
                       eventTTL:
                         description: |-
@@ -585,64 +630,6 @@ spec:
                               Defaults to 2.
                             format: int32
                             type: integer
-                        type: object
-                      oidcConfig:
-                        description: |-
-                          OIDCConfig contains configuration settings for the OIDC provider.
-
-                          Deprecated: This field is deprecated and will be forbidden starting from Kubernetes 1.32.
-                          Please configure and use structured authentication instead of oidc flags.
-                          For more information check https://github.com/gardener/gardener/issues/9858
-                        properties:
-                          caBundle:
-                            description: If set, the OpenID server's certificate will be verified by one of the authorities in the oidc-ca-file, otherwise the host's root CA set will be used.
-                            type: string
-                          clientAuthentication:
-                            description: |-
-                              ClientAuthentication can optionally contain client configuration used for kubeconfig generation.
-
-                              Deprecated: This field has no implemented use and will be forbidden starting from Kubernetes 1.31.
-                              It's use was planned for generating OIDC kubeconfig https://github.com/gardener/gardener/issues/1433
-                            properties:
-                              extraConfig:
-                                additionalProperties:
-                                  type: string
-                                description: |-
-                                  Extra configuration added to kubeconfig's auth-provider.
-                                  Must not be any of idp-issuer-url, client-id, client-secret, idp-certificate-authority, idp-certificate-authority-data, id-token or refresh-token
-                                type: object
-                              secret:
-                                description: The client Secret for the OpenID Connect client.
-                                type: string
-                            type: object
-                          clientID:
-                            description: The client ID for the OpenID Connect client, must be set.
-                            type: string
-                          groupsClaim:
-                            description: If provided, the name of a custom OpenID Connect claim for specifying user groups. The claim value is expected to be a string or array of strings. This flag is experimental, please see the authentication documentation for further details.
-                            type: string
-                          groupsPrefix:
-                            description: If provided, all groups will be prefixed with this value to prevent conflicts with other authentication strategies.
-                            type: string
-                          issuerURL:
-                            description: The URL of the OpenID issuer, only HTTPS scheme will be accepted. Used to verify the OIDC JSON Web Token (JWT).
-                            type: string
-                          requiredClaims:
-                            additionalProperties:
-                              type: string
-                            description: key=value pairs that describes a required claim in the ID Token. If set, the claim is verified to be present in the ID Token with a matching value.
-                            type: object
-                          signingAlgs:
-                            description: List of allowed JOSE asymmetric signing algorithms. JWTs with a 'alg' header value not in this list will be rejected. Values are defined by RFC 7518 https://tools.ietf.org/html/rfc7518#section-3.1
-                            items:
-                              type: string
-                            type: array
-                          usernameClaim:
-                            description: The OpenID claim to use as the user name. Note that claims other than the default ('sub') is not guaranteed to be unique and immutable. This flag is experimental, please see the authentication documentation for further details. (default "sub")
-                            type: string
-                          usernamePrefix:
-                            description: If provided, all usernames will be prefixed with this value. If not provided, username claims other than 'email' are prefixed by the issuer URL to avoid clashes. To skip any prefixing, provide the value '-'.
-                            type: string
                         type: object
                       requests:
                         description: Requests contains configuration for request-specific settings for the kube-apiserver.
@@ -700,9 +687,7 @@ spec:
                             type: string
                         type: object
                       structuredAuthentication:
-                        description: |-
-                          StructuredAuthentication contains configuration settings for structured authentication for the kube-apiserver.
-                          This field is only available for Kubernetes v1.30 or later.
+                        description: StructuredAuthentication contains configuration settings for structured authentication for the kube-apiserver.
                         properties:
                           configMapName:
                             description: |-
@@ -713,9 +698,7 @@ spec:
                           - configMapName
                         type: object
                       structuredAuthorization:
-                        description: |-
-                          StructuredAuthorization contains configuration settings for structured authorization for the kube-apiserver.
-                          This field is only available for Kubernetes v1.30 or later.
+                        description: StructuredAuthorization contains configuration settings for structured authorization for the kube-apiserver.
                         properties:
                           configMapName:
                             description: |-
@@ -754,9 +737,10 @@ spec:
                         properties:
                           default:
                             description: |-
-                              Default configures the default watch cache size of the kube-apiserver
-                              (flag `--default-watch-cache-size`, defaults to 100).
-                              See: https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+                              Default is not respected anymore by kube-apiserver.
+                              The cache is sized automatically.
+
+                              Deprecated: This field is deprecated. Setting the default cache size will be forbidden starting from Kubernetes 1.35.
                             format: int32
                             type: integer
                           resources:
@@ -819,6 +803,10 @@ spec:
                         description: NodeCIDRMaskSize defines the mask size for node cidr in cluster (default is 24). This field is immutable.
                         format: int32
                         type: integer
+                      nodeCIDRMaskSizeIPv6:
+                        description: NodeCIDRMaskSizeIPv6 defines the mask size for node cidr in cluster (default is 64). This field is immutable.
+                        format: int32
+                        type: integer
                       nodeMonitorGracePeriod:
                         description: NodeMonitorGracePeriod defines the grace period before an unresponsive node is marked unhealthy.
                         type: string
@@ -865,10 +853,11 @@ spec:
                         type: object
                       kubeMaxPDVols:
                         description: |-
-                          KubeMaxPDVols allows to configure the `KUBE_MAX_PD_VOLS` environment variable for the kube-scheduler.
-                          Please find more information here: https://kubernetes.io/docs/concepts/storage/storage-limits/#custom-limits
-                          Note that using this field is considered alpha-/experimental-level and is on your own risk. You should be aware
-                          of all the side-effects and consequences when changing it.
+                          KubeMaxPDVols is not respected anymore by kube-scheduler.
+                          The maximum number of attached volumes is configured by the CSI driver.
+                          More information can be found at https://kubernetes.io/docs/concepts/storage/storage-limits/#custom-limits.
+
+                          Deprecated: This field is deprecated. Using this field will be forbidden starting from Kubernetes 1.35.
                         type: string
                       profile:
                         description: |-
@@ -1112,7 +1101,7 @@ spec:
                         properties:
                           swapBehavior:
                             description: |-
-                              SwapBehavior configures swap memory available to container workloads. May be one of {"LimitedSwap", "UnlimitedSwap"}
+                              SwapBehavior configures swap memory available to container workloads. May be one of {"NoSwap", "LimitedSwap"}
                               defaults to: LimitedSwap
                             type: string
                         type: object
@@ -1154,43 +1143,6 @@ spec:
                           This field cannot be set lower than "30s" or greater than "4h".
                           Default: "5m".
                         type: string
-                      systemReserved:
-                        description: |-
-                          SystemReserved is the configuration for resources reserved for system processes not managed by kubernetes (e.g. journald).
-                          When updating these values, be aware that cgroup resizes may not succeed on active worker nodes. Look for the NodeAllocatableEnforced event to determine if the configuration was applied.
-
-                          Deprecated: Separately configuring resource reservations for system processes is deprecated in Gardener and will be forbidden starting from Kubernetes 1.31.
-                          Please merge existing resource reservations into the kubeReserved field.
-                        properties:
-                          cpu:
-                            anyOf:
-                              - type: integer
-                              - type: string
-                            description: CPU is the reserved cpu.
-                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                            x-kubernetes-int-or-string: true
-                          ephemeralStorage:
-                            anyOf:
-                              - type: integer
-                              - type: string
-                            description: EphemeralStorage is the reserved ephemeral-storage.
-                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                            x-kubernetes-int-or-string: true
-                          memory:
-                            anyOf:
-                              - type: integer
-                              - type: string
-                            description: Memory is the reserved memory.
-                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                            x-kubernetes-int-or-string: true
-                          pid:
-                            anyOf:
-                              - type: integer
-                              - type: string
-                            description: PID is the reserved process-ids.
-                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                            x-kubernetes-int-or-string: true
-                        type: object
                     type: object
                   version:
                     description: |-
@@ -1293,6 +1245,12 @@ spec:
                       recommenderInterval:
                         description: 'RecommenderInterval is the interval how often metrics should be fetched (default: 1m0s).'
                         type: string
+                      recommenderUpdateWorkerCount:
+                        description: |-
+                          RecommenderUpdateWorkerCount is the number of workers used in the vpa-recommender for updating VPAs and VPACheckpoints in parallel.
+                          (default: 10)
+                        format: int64
+                        type: integer
                       targetCPUPercentile:
                         description: |-
                           TargetCPUPercentile is the usage percentile that will be used as a base for CPU target recommendation.
@@ -1557,6 +1515,9 @@ spec:
                     items:
                       description: ShootAdvertisedAddress contains information for the shoot's Kube API server.
                       properties:
+                        application:
+                          description: Application is the name of the application this address belongs to. Used by UI clients.
+                          type: string
                         name:
                           description: Name of the advertised address. e.g. external
                           type: string
@@ -1654,6 +1615,29 @@ spec:
                   credentials:
                     description: Credentials contains information about the shoot credentials.
                     properties:
+                      encryptionAtRest:
+                        description: EncryptionAtRest contains information about Shoot data encryption at rest.
+                        properties:
+                          provider:
+                            description: Provider contains information about Shoot encryption provider.
+                            properties:
+                              type:
+                                description: Type is the used encryption provider type.
+                                type: string
+                            required:
+                              - type
+                            type: object
+                          resources:
+                            description: |-
+                              Resources is the list of resources in the Shoot which are currently encrypted.
+                              Secrets are encrypted by default and are not part of the list.
+                              See https://github.com/gardener/gardener/blob/master/docs/usage/security/etcd_encryption_config.md for more details.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                          - provider
+                        type: object
                       rotation:
                         description: Rotation contains information about the credential rotations.
                         properties:
@@ -1821,14 +1805,6 @@ spec:
                             type: object
                         type: object
                     type: object
-                  encryptedResources:
-                    description: |-
-                      EncryptedResources is the list of resources in the Shoot which are currently encrypted.
-                      Secrets are encrypted by default and are not part of the list.
-                      See https://github.com/gardener/gardener/blob/master/docs/usage/security/etcd_encryption_config.md for more details.
-                    items:
-                      type: string
-                    type: array
                   gardener:
                     description: Gardener holds information about the Gardener which last acted on the Shoot.
                     properties:
@@ -1945,6 +1921,50 @@ spec:
                       - progress
                       - state
                       - type
+                    type: object
+                  liveMigration:
+                    description: LiveMigration contains information about an ongoing live control plane migration of the Shoot.
+                    properties:
+                      conditions:
+                        description: Conditions represents the progress of the live migration, one condition per migration step.
+                        items:
+                          description: Condition holds the information about the state of a resource.
+                          properties:
+                            codes:
+                              description: Well-defined error codes in case the condition reports a problem.
+                              items:
+                                description: ErrorCode is a string alias.
+                                type: string
+                              type: array
+                            lastTransitionTime:
+                              description: Last time the condition transitioned from one status to another.
+                              format: date-time
+                              type: string
+                            lastUpdateTime:
+                              description: Last time the condition was updated.
+                              format: date-time
+                              type: string
+                            message:
+                              description: A human readable message indicating details about the transition.
+                              type: string
+                            reason:
+                              description: The reason for the condition's last transition.
+                              type: string
+                            status:
+                              description: Status of the condition, one of True, False, Unknown.
+                              type: string
+                            type:
+                              description: Type of the condition.
+                              type: string
+                          required:
+                            - lastTransitionTime
+                            - lastUpdateTime
+                            - message
+                            - reason
+                            - status
+                            - type
+                          type: object
+                        type: array
                     type: object
                   manualWorkerPoolRollout:
                     description: ManualWorkerPoolRollout contains information about the worker pool rollout progress.

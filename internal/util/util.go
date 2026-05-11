@@ -118,7 +118,7 @@ func syncAnnotations(source, target map[string]string, allowedKeys []string) map
 func SyncShootSpecFromGSCP(shoot *gardenercorev1beta1.Shoot, controlPlane *controlplanev1alpha1.GardenerShootControlPlane) {
 	shoot.Annotations = syncAnnotations(controlPlane.Annotations, shoot.Annotations, AnnotationAllowList)
 
-	shoot.Spec.Addons = controlPlane.Spec.Addons
+	shoot.Spec.Addons = controlPlane.Spec.Addons //nolint:staticcheck
 	shoot.Spec.DNS = controlPlane.Spec.DNS
 	shoot.Spec.Extensions = controlPlane.Spec.Extensions
 	shoot.Spec.Kubernetes = controlPlane.Spec.Kubernetes
@@ -142,7 +142,7 @@ func SyncShootSpecFromGSCP(shoot *gardenercorev1beta1.Shoot, controlPlane *contr
 func SyncGSCPSpecFromShoot(shoot *gardenercorev1beta1.Shoot, controlPlane *controlplanev1alpha1.GardenerShootControlPlane) {
 	controlPlane.Annotations = syncAnnotations(shoot.Annotations, controlPlane.Annotations, AnnotationAllowList)
 
-	controlPlane.Spec.Addons = shoot.Spec.Addons
+	controlPlane.Spec.Addons = shoot.Spec.Addons //nolint:staticcheck
 	controlPlane.Spec.DNS = shoot.Spec.DNS
 	controlPlane.Spec.Extensions = shoot.Spec.Extensions
 	controlPlane.Spec.Kubernetes = shoot.Spec.Kubernetes
@@ -344,7 +344,7 @@ func IsWorkerPoolSpecEqual(original, updated *infrastructurev1alpha1.GardenerWor
 // ProviderWithRun is an interface that extends the multicluster.Provider interface that expects to be runnable.
 type ProviderWithRun interface {
 	multicluster.Provider
-	Run(context.Context, mcmanager.Manager) error
+	Start(context.Context, multicluster.Aware) error
 }
 
 // SingleClusterProviderWithRun wraps a multicluster.Provider to run on a single cluster.
@@ -361,10 +361,12 @@ func NewSingleClusterProviderWithRun(cluster cluster.Cluster) *SingleClusterProv
 	}
 }
 
-// Run starts the single cluster provider with the specified manager.
-func (s *SingleClusterProviderWithRun) Run(ctx context.Context, mgr mcmanager.Manager) error {
-	if err := mgr.Engage(ctx, mcmanager.LocalCluster, s.Cluster); err != nil {
-		return err
+// Start starts the single cluster provider with the specified manager.
+func (s *SingleClusterProviderWithRun) Start(ctx context.Context, aware multicluster.Aware) error {
+	if mgr, ok := aware.(mcmanager.Manager); ok {
+		if err := mgr.Engage(ctx, mcmanager.LocalCluster, s.Cluster); err != nil {
+			return err
+		}
 	}
-	return s.Provider.(ProviderWithRun).Run(ctx, mgr)
+	return s.Provider.(multicluster.ProviderRunnable).Start(ctx, aware)
 }

@@ -227,7 +227,7 @@ func main() {
 
 	var provider util.ProviderWithRun
 	if isKcp {
-		provider, err = apiexport.New(restConfig, apiexport.Options{
+		provider, err = apiexport.New(restConfig, apiExportName, apiexport.Options{
 			Scheme:        controlplanev1alpha1.Scheme,
 			ObjectToWatch: &apisv1alpha2.APIBinding{},
 		})
@@ -414,7 +414,7 @@ func main() {
 	g, ctx := errgroup.WithContext(mgrContext)
 	setupLog.Info("starting provider")
 	g.Go(func() error {
-		return ignoreCanceled(provider.Run(ctx, mgr))
+		return ignoreCanceled(provider.Start(ctx, mgr))
 	})
 	setupLog.Info("starting multicluster manager")
 	g.Go(func() error {

@@ -8,8 +8,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gardener/gardener/pkg/api/core/helper"
 	"github.com/gardener/gardener/pkg/apis/core"
-	"github.com/gardener/gardener/pkg/apis/core/helper"
 	gardenercorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	"sigs.k8s.io/multicluster-runtime/pkg/multicluster"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	infrastructurev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/infrastructure/v1alpha1"
@@ -301,5 +302,5 @@ func (r *GardenerShootClusterReconciler) MapShootToGardenerShootClusterObject(ct
 			Namespace: namespace,
 		},
 	}
-	return []mcreconcile.Request{{Request: reconcile.Request{NamespacedName: client.ObjectKeyFromObject(infraCluster)}, ClusterName: clusterName}}
+	return []mcreconcile.Request{{Request: reconcile.Request{NamespacedName: client.ObjectKeyFromObject(infraCluster)}, ClusterName: multicluster.ClusterName(clusterName)}}
 }

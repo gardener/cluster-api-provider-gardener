@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.1
   name: gardenershootclusters.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
@@ -84,6 +84,46 @@ spec:
                   Maintenance contains information about the time window for maintenance operations and which
                   operations should be performed.
                 properties:
+                  autoRotation:
+                    description: AutoRotation contains information about which rotations
+                      should be automatically performed.
+                    properties:
+                      credentials:
+                        description: Credentials contains information about which
+                          credentials should be automatically rotated.
+                        properties:
+                          etcdEncryptionKey:
+                            description: ETCDEncryptionKey configures the automatic
+                              rotation for the etcd encryption key.
+                            properties:
+                              rotationPeriod:
+                                description: |-
+                                  RotationPeriod is the period between a completed rotation and the start of a new rotation (default: 7d).
+                                  The allowed rotation period is between 30m and 90d. When set to 0, rotation is disabled.
+                                type: string
+                            type: object
+                          observability:
+                            description: Observability configures the automatic rotation
+                              for the observability credentials.
+                            properties:
+                              rotationPeriod:
+                                description: |-
+                                  RotationPeriod is the period between a completed rotation and the start of a new rotation (default: 7d).
+                                  The allowed rotation period is between 30m and 90d. When set to 0, rotation is disabled.
+                                type: string
+                            type: object
+                          sshKeypair:
+                            description: SSHKeypair configures the automatic rotation
+                              for the ssh keypair for worker nodes.
+                            properties:
+                              rotationPeriod:
+                                description: |-
+                                  RotationPeriod is the period between a completed rotation and the start of a new rotation (default: 7d).
+                                  The allowed rotation period is between 30m and 90d. When set to 0, rotation is disabled.
+                                type: string
+                            type: object
+                        type: object
+                    type: object
                   autoUpdate:
                     description: AutoUpdate contains information about which constraints
                       should be automatically updated.
