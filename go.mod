@@ -123,6 +123,8 @@ require (
 	github.com/kcp-dev/apimachinery/v2 v2.31.2 // indirect
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
+	github.com/kcp-dev/sdk v0.31.0 // indirect
+	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/labstack/echo/v4 v4.15.1 // indirect
