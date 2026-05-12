@@ -349,8 +349,6 @@ github.com/kcp-dev/apimachinery/v2 v2.31.2 h1:/GKCEzPlsfnaMDq2/VE6KJGE9yiAZAg9Mc
 github.com/kcp-dev/apimachinery/v2 v2.31.2/go.mod h1:ta+d3xQkLYWBEEg8ICed+PekW3MckEYqXG4amq6Uk9Y=
 github.com/kcp-dev/apimachinery/v2 v2.31.0 h1:N/ALc/v8ZXMxC9a8ovXeQaiFwx8COrqG+FOqD1zl2fY=
 github.com/kcp-dev/apimachinery/v2 v2.31.0/go.mod h1:ta+d3xQkLYWBEEg8ICed+PekW3MckEYqXG4amq6Uk9Y=
-github.com/kcp-dev/kcp/sdk v0.28.3 h1:TS2nJOVBjenBd3fz1+y3aNrqZWqmakalNAIcQM9SukQ=
-github.com/kcp-dev/kcp/sdk v0.28.3/go.mod h1:8oZpWxkoMu2TDpx5DgdIGDigByKHKkeqVMA4GiWneoI=
 github.com/kcp-dev/logicalcluster/v3 v3.0.5 h1:JbYakokb+5Uinz09oTXomSUJVQsqfxEvU4RyHUYxHOU=
 github.com/kcp-dev/logicalcluster/v3 v3.0.5/go.mod h1:EWBUBxdr49fUB1cLMO4nOdBWmYifLbP1LfoL20KkXYY=
 github.com/kcp-dev/multicluster-provider v0.7.1 h1:Adqvt+ECTgVizkam+QxzNi1mun1IixSg9as4xZS+gqw=
@@ -886,8 +884,8 @@ k8s.io/utils v0.0.0-20260319190234-28399d86e0b5/go.mod h1:xDxuJ0whA3d0I4mf/C4ppK
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.33.0 h1:qPrZsv1cwQiFeieFlRqT627fVZ+tyfou/+S5S0H5ua0=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.33.0/go.mod h1:Ve9uj1L+deCXFrPOk1LpFXqTg7LCFzFso6PA48q/XZw=
-sigs.k8s.io/cluster-api v1.11.10 h1:KWbs71D5tgZ/I9r1eRWz54RVPGkqI3JClZgB7rTtJto=
-sigs.k8s.io/cluster-api v1.11.10/go.mod h1:Xpz9JeFxT3dgP+wUhTs9iSw0u/3XdO8ZzWIYAZvF0VY=
+sigs.k8s.io/cluster-api v1.11.11 h1:MvUjPlUYk72ow4HhI9lJlt0C1iY8JsyPtx5YFV8pLJA=
+sigs.k8s.io/cluster-api v1.11.11/go.mod h1:wplBEE7AErSt8bN93qrqXeXQ8uEq69RfJBPPYoHWLAE=
 sigs.k8s.io/controller-runtime v0.23.3 h1:VjB/vhoPoA9l1kEKZHBMnQF33tdCLQKJtydy4iqwZ80=
 sigs.k8s.io/controller-runtime v0.23.3/go.mod h1:B6COOxKptp+YaUT5q4l6LqUJTRpizbgf9KSRNdQGns0=
 sigs.k8s.io/controller-tools v0.20.1 h1:gkfMt9YodI0K85oT8rVi80NTXO/kDmabKR5Ajn5GYxs=
