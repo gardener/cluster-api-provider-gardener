@@ -216,23 +216,22 @@ func main() {
 	if isKcp, err = util.HasKcpAPIGroups(restConfig); err != nil {
 		setupLog.Error(err, "to determine if kcp API Group is present")
 	}
-	if isKcp {
-		setupLog.Info("Found KCP APIs, looking up virtual workspace URL")
-		restConfig, err = util.RestConfigForLogicalClusterHostingAPIExport(mgrContext, restConfig, apiExportName)
-		if err != nil {
-			setupLog.Error(err, "looking up virtual workspace URL")
-			os.Exit(1)
-		}
-	}
 
 	var provider util.ProviderWithRun
 	if isKcp {
+		setupLog.Info("Found KCP APIs, looking up virtual workspace URL")
 		provider, err = apiexport.New(restConfig, apiExportName, apiexport.Options{
 			Scheme:        controlplanev1alpha1.Scheme,
 			ObjectToWatch: &apisv1alpha2.APIBinding{},
 		})
 		if err != nil {
 			setupLog.Error(err, "unable to create kcp Provider")
+			os.Exit(1)
+		}
+
+		restConfig, err = util.RestConfigForLogicalClusterHostingAPIExport(mgrContext, restConfig, apiExportName)
+		if err != nil {
+			setupLog.Error(err, "looking up virtual workspace URL")
 			os.Exit(1)
 		}
 	}
