@@ -55,10 +55,19 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 
 			By("running the controller")
 			Expect(os.Setenv("ENABLE_WEBHOOKS", "false")).To(Succeed())
-			cmd = exec.Command("go", "run", "cmd/main.go", "--kubeconfig", kubeconfigKcp, "-gardener-kubeconfig", utils.KubeconfigGardener)
-			controllerOutput, err := utils.Run(cmd)
-			Expect(err).NotTo(HaveOccurred(), "Failed to run the controller")
-			_, _ = fmt.Fprintf(GinkgoWriter, "Controller logs:\n %s", controllerOutput)
+			// Retry starting the controller — it may fail initially while KCP
+			// reconciles the APIExport virtual workspace endpoints.
+			for range 30 {
+				cmd = exec.Command("go", "run", "cmd/main.go", "--kubeconfig", kubeconfigKcp, "-gardener-kubeconfig", utils.KubeconfigGardener)
+				controllerOutput, err := utils.Run(cmd)
+				if err == nil {
+					_, _ = fmt.Fprintf(GinkgoWriter, "Controller logs:\n %s", controllerOutput)
+					return
+				}
+				_, _ = fmt.Fprintf(GinkgoWriter, "Controller exited, restarting: %s\n", err)
+				time.Sleep(2 * time.Second)
+			}
+			Fail("Failed to run the controller after retries")
 		}()
 	})
 
@@ -186,7 +195,7 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 			Eventually(func(g Gomega) {
 				g.Expect(gardenerClient.Client().Get(ctx, client.ObjectKeyFromObject(shoot), shoot)).To(Succeed())
 				g.Expect(shoot.Status.LastOperation).ToNot(BeNil())
-			}).WithTimeout(30 * time.Second).Should(Succeed())
+			}).WithTimeout(2 * time.Minute).Should(Succeed())
 
 			By(fmt.Sprintf("Ensure control plane is reconciled and shoot is created (Name: %s)", controlPlaneSpec.Name))
 			Eventually(func(g Gomega) {

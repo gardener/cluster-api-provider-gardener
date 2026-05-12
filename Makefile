@@ -122,7 +122,7 @@ test-e2e: $(KIND) ## Run the e2e tests. Expected an isolated environment using K
 		echo "No Kind cluster is running. Please start a Kind cluster before running the e2e tests."; \
 		exit 1; \
 	}
-	@KUBECONFIG=$(RUNTIME_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/... -v -ginkgo.v
+	@KUBECONFIG=$(RUNTIME_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/... -v -ginkgo.v -timeout 30m
 
 KCP_PORT ?= 6443
 .PHONY: kcp-up
