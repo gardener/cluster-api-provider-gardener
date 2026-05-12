@@ -33,7 +33,6 @@ const namespace = "gardener"
 var (
 	kubeconfigKcp         = ".kcp/admin.kubeconfig"
 	kubeconfigKcpWorkload = ".kcp/workload.kubeconfig"
-	kubeconfigGardener    = "./bin/gardener/dev-setup/kubeconfigs/virtual-garden/kubeconfig"
 )
 
 var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
@@ -56,7 +55,7 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 
 			By("running the controller")
 			Expect(os.Setenv("ENABLE_WEBHOOKS", "false")).To(Succeed())
-			cmd = exec.Command("go", "run", "cmd/main.go", "--kubeconfig", kubeconfigKcp, "-gardener-kubeconfig", kubeconfigGardener)
+			cmd = exec.Command("go", "run", "cmd/main.go", "--kubeconfig", kubeconfigKcp, "-gardener-kubeconfig", utils.KubeconfigGardener)
 			controllerOutput, err := utils.Run(cmd)
 			Expect(err).NotTo(HaveOccurred(), "Failed to run the controller")
 			_, _ = fmt.Fprintf(GinkgoWriter, "Controller logs:\n %s", controllerOutput)
@@ -106,7 +105,7 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 				kubernetes.WithDisabledCachedClient(),
 			)
 			Expect(err).ToNot(HaveOccurred())
-			gardenerClient, err := kubernetes.NewClientFromFile("", kubeconfigGardener,
+			gardenerClient, err := kubernetes.NewClientFromFile("", utils.KubeconfigGardener,
 				kubernetes.WithClientOptions(client.Options{Scheme: api.Scheme}),
 				kubernetes.WithClientConnectionOptions(
 					componentbaseconfigv1alpha1.ClientConnectionConfiguration{QPS: 100, Burst: 130}),
@@ -129,7 +128,7 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 				Spec: controlplanev1alpha1.GardenerShootControlPlaneSpec{
 					ProjectNamespace: "garden-local",
 					Provider:         controlplanev1alpha1.ProviderGSCP{Type: "local"},
-					Kubernetes:       gardenercorev1beta1.Kubernetes{Version: "1.32"},
+					Kubernetes:       gardenercorev1beta1.Kubernetes{Version: "1"},
 					CloudProfile:     &gardenercorev1beta1.CloudProfileReference{Name: "local"},
 					Workerless:       true,
 				},

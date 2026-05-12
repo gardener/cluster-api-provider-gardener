@@ -33,7 +33,7 @@ spec:
             - --health-probe-bind-address=:8081
             - --gardener-kubeconfig=/etc/gardener-kubeconfig/kubeconfig
             - --kubeconfig=/etc/kubeconfig/kubeconfig
-          image: localhost:5001/cluster-api-provider-gardener/controller:latest
+          image: registry.local.gardener.cloud:5001/cluster-api-provider-gardener/controller:latest
           name: manager
           volumeMounts:
             - mountPath: "/etc/kubeconfig"

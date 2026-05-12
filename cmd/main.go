@@ -411,10 +411,14 @@ func main() {
 	}
 
 	g, ctx := errgroup.WithContext(mgrContext)
-	setupLog.Info("starting provider")
-	g.Go(func() error {
-		return ignoreCanceled(provider.Start(ctx, mgr))
-	})
+	if !isKcp {
+		// In the KCP path, mgr.Start already starts the provider (it implements ProviderRunnable).
+		// In the non-KCP path the provider was created after mcmanager.New and is not known to the manager.
+		setupLog.Info("starting provider")
+		g.Go(func() error {
+			return ignoreCanceled(provider.Start(ctx, mgr))
+		})
+	}
 	setupLog.Info("starting multicluster manager")
 	g.Go(func() error {
 		return ignoreCanceled(mgr.Start(ctx))
