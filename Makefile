@@ -10,10 +10,11 @@ HACK_DIR            := $(REPO_ROOT)/hack
 
 # Image URL to use all building/pushing image targets
 IMG                 ?= localhost:5001/cluster-api-provider-gardener/controller:latest
-GARDENER_KUBECONFIG ?= ./bin/gardener/example/provider-local/seed-kind/base/kubeconfig
-RUNTIME_KUBECONFIG  ?= $(GARDENER_KUBECONFIG)
+GARDENER_KUBECONFIG ?= ./bin/gardener/dev-setup/kubeconfigs/virtual-garden/kubeconfig
+RUNTIME_KUBECONFIG  ?= ./bin/gardener/dev-setup/kubeconfigs/runtime/kubeconfig
 
 GARDENER_DIR        ?= $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener)
+GARDENER_APIS_DIR   ?= $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener/pkg/apis)
 CAPI_DIR            ?= $(shell go list -m -f '{{.Dir}}' sigs.k8s.io/cluster-api)
 KCP_KUBECONFIG      ?= ./.kcp/admin.kubeconfig
 
@@ -284,7 +285,7 @@ $(CLUSTERCTL): $(LOCALBIN)
 .PHONY: gardener
 gardener: $(GARDENER) $(GARDENER_DIR) ## Copy gardener locally if necessary.
 $(GARDENER): $(LOCALBIN)
-	@[ -d $(GARDENER) ] || cp -r $(GARDENER_DIR) $(GARDENER)
+	@[ -d $(GARDENER) ] || { cp -r $(GARDENER_DIR) $(GARDENER) && cp -r $(GARDENER_APIS_DIR) $(GARDENER)/pkg/apis; }
 
 .PHONY: capi
 capi: $(CAPI) $(CAPI_DIR) ## Copy capi locally if necessary.

@@ -33,7 +33,7 @@ const namespace = "gardener"
 var (
 	kubeconfigKcp         = ".kcp/admin.kubeconfig"
 	kubeconfigKcpWorkload = ".kcp/workload.kubeconfig"
-	kubeconfigGardener    = "./bin/gardener/example/provider-local/seed-kind/base/kubeconfig"
+	kubeconfigGardener    = "./bin/gardener/dev-setup/kubeconfigs/virtual-garden/kubeconfig"
 )
 
 var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
