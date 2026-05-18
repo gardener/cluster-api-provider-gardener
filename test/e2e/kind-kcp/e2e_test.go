@@ -5,6 +5,7 @@
 package kind_kcp
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,6 +13,7 @@ import (
 
 	gardenercorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
+	"github.com/gardener/gardener/pkg/utils/retry"
 	"github.com/gardener/gardener/pkg/utils/test/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -36,7 +38,7 @@ var (
 )
 
 var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
-	BeforeAll(func() {
+	BeforeAll(func(ctx context.Context) {
 		By("installing APIResourceSchemas, APIExports and APIBindings in the provider workspace")
 		Eventually(func(g Gomega) {
 			cmd := exec.Command("kubectl", "apply", "-f", "schemas/gardener")
@@ -55,19 +57,20 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 
 			By("running the controller")
 			Expect(os.Setenv("ENABLE_WEBHOOKS", "false")).To(Succeed())
-			// Retry starting the controller — it may fail initially while KCP
-			// reconciles the APIExport virtual workspace endpoints.
-			for range 30 {
+			if err := retry.Until(ctx, time.Minute, func(_ context.Context) (done bool, err error) {
+				// Retry starting the controller. It may fail initially while KCP reconciles the APIExport virtual workspace endpoints.
 				cmd = exec.Command("go", "run", "cmd/main.go", "--kubeconfig", kubeconfigKcp, "-gardener-kubeconfig", utils.KubeconfigGardener)
 				controllerOutput, err := utils.Run(cmd)
 				if err == nil {
 					_, _ = fmt.Fprintf(GinkgoWriter, "Controller logs:\n %s", controllerOutput)
-					return
+					return true, nil
 				}
 				_, _ = fmt.Fprintf(GinkgoWriter, "Controller exited, restarting: %s\n", err)
-				time.Sleep(2 * time.Second)
+				return false, err
+
+			}); err != nil {
+				Fail("Failed to run the controller after retries")
 			}
-			Fail("Failed to run the controller after retries")
 		}()
 	})
 
