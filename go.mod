@@ -247,4 +247,4 @@ require (
 
 // multicluster-provider v0.7.0 has a local replace for its client submodule;
 // GoLand cannot resolve the pseudo-version so we pin to the actual tag.
-replace github.com/kcp-dev/multicluster-provider/client => github.com/kcp-dev/multicluster-provider/client v0.7.0
+replace github.com/kcp-dev/multicluster-provider/client => github.com/kcp-dev/multicluster-provider/client v0.7.1
