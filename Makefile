@@ -269,7 +269,7 @@ KUBECTL_WS ?= $(LOCALBIN)/kubectl-create-workspace
 # renovate: datasource=github-releases depName=kubernetes-sigs/cluster-api
 CLUSTERCTL_VERSION ?= v1.11.11
 # renovate: datasource=github-releases depName=kcp-dev/kcp
-KCP_VERSION ?= v0.29.0
+KCP_VERSION ?= v0.31.2
 
 .PHONY: envsubst
 envsubst:
