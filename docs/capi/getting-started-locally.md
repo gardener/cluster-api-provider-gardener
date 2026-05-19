@@ -23,7 +23,7 @@ EXP_MACHINE_POOL=true clusterctl init
 **Build and push your image to the location specified by `IMG`:**
 
 ```sh
-make docker-build docker-push IMG=localhost:5001/cluster-api-provider-gardener/controller:latest
+make docker-build docker-push IMG=registry.local.gardener.cloud:5001/cluster-api-provider-gardener/controller:latest
 ```
 
 > [!NOTE] 
@@ -45,7 +45,7 @@ make install
 > For production environments, do not use the `config/overlays/dev` kustomization. 🚫
 
 ```sh
-make deploy IMG=localhost:5001/cluster-api-provider-gardener/controller:latest GARDENER_KUBECONFIG=<path/to/gardener/kubeconfig.yaml>
+make deploy IMG=registry.local.gardener.cloud:5001/cluster-api-provider-gardener/controller:latest GARDENER_KUBECONFIG=<path/to/gardener/kubeconfig.yaml>
 ```
 
 **Create instances of your solution** ✨

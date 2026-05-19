@@ -16,6 +16,9 @@ import (
 const (
 	certmanagerVersion = "v1.16.3"
 	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
+
+	// KubeconfigGardener is the KUBECONFIG to the virtual garden cluster in the local/e2e setup.
+	KubeconfigGardener = "./bin/gardener/dev-setup/kubeconfigs/virtual-garden/kubeconfig"
 )
 
 func warnError(err error) {

@@ -2,16 +2,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-ENSURE_GARDENER_MOD := $(shell go get github.com/gardener/gardener@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener))
-ENSURE_CAPI_MOD     := $(shell go get sigs.k8s.io/cluster-api@$$(go list -m -f "{{.Version}}" sigs.k8s.io/cluster-api))
+ENSURE_GARDENER_MOD      := $(shell go get github.com/gardener/gardener@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener))
+ENSURE_GARDENER_APIS_MOD := $(shell go get github.com/gardener/gardener/pkg/apis@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener/pkg/apis))
+ENSURE_CAPI_MOD          := $(shell go get sigs.k8s.io/cluster-api@$$(go list -m -f "{{.Version}}" sigs.k8s.io/cluster-api))
 GARDENER_HACK_DIR   := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
 REPO_ROOT           := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 HACK_DIR            := $(REPO_ROOT)/hack
 
 # Image URL to use all building/pushing image targets
-IMG                 ?= localhost:5001/cluster-api-provider-gardener/controller:latest
-GARDENER_KUBECONFIG ?= ./bin/gardener/example/provider-local/seed-kind/base/kubeconfig
-RUNTIME_KUBECONFIG  ?= $(GARDENER_KUBECONFIG)
+IMG                 ?= registry.local.gardener.cloud:5001/cluster-api-provider-gardener/controller:latest
+GARDENER_KUBECONFIG ?= ./bin/gardener/dev-setup/kubeconfigs/virtual-garden/kubeconfig
+RUNTIME_KUBECONFIG  ?= ./bin/gardener/dev-setup/kubeconfigs/runtime/kubeconfig
 
 GARDENER_DIR        ?= $(shell go list -m -f '{{.Dir}}' github.com/gardener/gardener)
 CAPI_DIR            ?= $(shell go list -m -f '{{.Dir}}' sigs.k8s.io/cluster-api)
@@ -85,7 +86,7 @@ deepcopy: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, 
 
 .PHONY: generate
 generate: manifests deepcopy fmt lint-fix format vet generate-schemas $(YQ) ## Generate and reformat code.
-	@GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) ./hack/generate-renovate-ignore-deps.sh
+	@ARRAY_KEY=ignoreDeps GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) RENOVATE_CONFIG=$(REPO_ROOT)/.github/renovate.json5 bash $(GARDENER_HACK_DIR)/generate-renovate-ignore-deps.sh
 
 .PHONY: generate-schemas
 generate-schemas: apigen $(YQ) $(CAPI) ## Generate OpenAPI schemas.
@@ -121,7 +122,7 @@ test-e2e: $(KIND) ## Run the e2e tests. Expected an isolated environment using K
 		echo "No Kind cluster is running. Please start a Kind cluster before running the e2e tests."; \
 		exit 1; \
 	}
-	KUBECONFIG=$(GARDENER_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/... -v -ginkgo.v
+	@KUBECONFIG=$(RUNTIME_KUBECONFIG) CERT_MANAGER_INSTALL_SKIP=true go test ./test/e2e/... -v -ginkgo.v -timeout 30m
 
 KCP_PORT ?= 6443
 .PHONY: kcp-up
@@ -138,7 +139,7 @@ kind-gardener-down: gardener
 
 .PHONY: clusterctl-init
 clusterctl-init: clusterctl
-	KUBECONFIG=$(GARDENER_KUBECONFIG) EXP_MACHINE_POOL=true $(CLUSTERCTL) init
+	KUBECONFIG=$(RUNTIME_KUBECONFIG) EXP_MACHINE_POOL=true $(CLUSTERCTL) init
 
 .PHONY: ci-e2e-kind
 ci-e2e-kind: kubectl-ws kubectl-kcp kind-gardener-up test-e2e
@@ -218,34 +219,34 @@ ifndef ignore-not-found
 endif
 
 .PHONY: install
-install: manifests $(KUSTOMIZE) $(KUBECTL) ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+install: manifests $(KUSTOMIZE) $(KUBECTL) ## Install CRDs into the K8s cluster specified in $RUNTIME_KUBECONFIG.
+	$(KUSTOMIZE) build config/crd | KUBECONFIG=$(RUNTIME_KUBECONFIG) kubectl apply -f -
 
 .PHONY: uninstall
-uninstall: manifests $(KUSTOMIZE) $(KUBECTL) ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+uninstall: manifests $(KUSTOMIZE) $(KUBECTL) ## Uninstall CRDs from the K8s cluster specified in $RUNTIME_KUBECONFIG. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/crd | KUBECONFIG=$(RUNTIME_KUBECONFIG) kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests $(KUSTOMIZE) envsubst $(KUBECTL) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests $(KUSTOMIZE) envsubst $(KUBECTL) ## Deploy controller to the K8s cluster specified in $RUNTIME_KUBECONFIG.
 	$(eval B64_GARDENER_KUBECONFIG_ENV := $(shell ./hack/gardener-kubeconfig.sh $(GARDENER_KUBECONFIG)))
 	@cd config/manager && kustomize edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/overlays/dev | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | kubectl apply -f -
+	$(KUSTOMIZE) build config/overlays/dev | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | KUBECONFIG=$(RUNTIME_KUBECONFIG) kubectl apply -f -
 
 .PHONY: deploy-prod
-deploy-prod: manifests $(KUSTOMIZE) $(KUBECTL) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy-prod: manifests $(KUSTOMIZE) $(KUBECTL) ## Deploy controller to the K8s cluster specified in $RUNTIME_KUBECONFIG.
 	$(eval B64_GARDENER_KUBECONFIG_ENV := $(shell ./hack/gardener-kubeconfig.sh $(GARDENER_KUBECONFIG)))
 	@cd config/manager && kustomize edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | KUBECONFIG=$(RUNTIME_KUBECONFIG) kubectl apply -f -
 
 .PHONY: deploy-kcp
-deploy-kcp: manifests $(KUSTOMIZE) envsubst $(KUBECTL) ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy-kcp: manifests $(KUSTOMIZE) envsubst $(KUBECTL) ## Deploy controller to the K8s cluster specified in $RUNTIME_KUBECONFIG.
 	$(eval B64_GARDENER_KUBECONFIG_ENV := $(shell ./hack/gardener-kubeconfig.sh $(GARDENER_KUBECONFIG)))
 	@cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/overlays/kcp | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | kubectl apply -f -
+	$(KUSTOMIZE) build config/overlays/kcp | B64_GARDENER_KUBECONFIG=$(B64_GARDENER_KUBECONFIG_ENV) envsubst | KUBECONFIG=$(RUNTIME_KUBECONFIG) kubectl apply -f -
 
 .PHONY: undeploy
-undeploy: $(KUSTOMIZE) $(KUBECTL) ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+undeploy: $(KUSTOMIZE) $(KUBECTL) ## Undeploy controller from the K8s cluster specified in $RUNTIME_KUBECONFIG. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/default | KUBECONFIG=$(RUNTIME_KUBECONFIG) kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Dependencies
 
@@ -269,7 +270,7 @@ KUBECTL_WS ?= $(LOCALBIN)/kubectl-create-workspace
 # renovate: datasource=github-releases depName=kubernetes-sigs/cluster-api
 CLUSTERCTL_VERSION ?= v1.11.11
 # renovate: datasource=github-releases depName=kcp-dev/kcp
-KCP_VERSION ?= v0.29.0
+KCP_VERSION ?= v0.31.0
 
 .PHONY: envsubst
 envsubst:

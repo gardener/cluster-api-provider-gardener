@@ -5,6 +5,7 @@
 package kind_kcp
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,6 +13,7 @@ import (
 
 	gardenercorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
+	"github.com/gardener/gardener/pkg/utils/retry"
 	"github.com/gardener/gardener/pkg/utils/test/matchers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -33,11 +35,10 @@ const namespace = "gardener"
 var (
 	kubeconfigKcp         = ".kcp/admin.kubeconfig"
 	kubeconfigKcpWorkload = ".kcp/workload.kubeconfig"
-	kubeconfigGardener    = "./bin/gardener/example/provider-local/seed-kind/base/kubeconfig"
 )
 
 var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
-	BeforeAll(func() {
+	BeforeAll(func(ctx context.Context) {
 		By("installing APIResourceSchemas, APIExports and APIBindings in the provider workspace")
 		Eventually(func(g Gomega) {
 			cmd := exec.Command("kubectl", "apply", "-f", "schemas/gardener")
@@ -56,10 +57,20 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 
 			By("running the controller")
 			Expect(os.Setenv("ENABLE_WEBHOOKS", "false")).To(Succeed())
-			cmd = exec.Command("go", "run", "cmd/main.go", "--kubeconfig", kubeconfigKcp, "-gardener-kubeconfig", kubeconfigGardener)
-			controllerOutput, err := utils.Run(cmd)
-			Expect(err).NotTo(HaveOccurred(), "Failed to run the controller")
-			_, _ = fmt.Fprintf(GinkgoWriter, "Controller logs:\n %s", controllerOutput)
+			if err := retry.Until(ctx, time.Minute, func(_ context.Context) (done bool, err error) {
+				// Retry starting the controller. It may fail initially while KCP reconciles the APIExport virtual workspace endpoints.
+				cmd = exec.Command("go", "run", "cmd/main.go", "--kubeconfig", kubeconfigKcp, "-gardener-kubeconfig", utils.KubeconfigGardener)
+				controllerOutput, err := utils.Run(cmd)
+				if err == nil {
+					_, _ = fmt.Fprintf(GinkgoWriter, "Controller logs:\n %s", controllerOutput)
+					return true, nil
+				}
+				_, _ = fmt.Fprintf(GinkgoWriter, "Controller exited, restarting: %s\n", err)
+				return false, err
+
+			}); err != nil {
+				Fail("Failed to run the controller after retries")
+			}
 		}()
 	})
 
@@ -106,7 +117,7 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 				kubernetes.WithDisabledCachedClient(),
 			)
 			Expect(err).ToNot(HaveOccurred())
-			gardenerClient, err := kubernetes.NewClientFromFile("", kubeconfigGardener,
+			gardenerClient, err := kubernetes.NewClientFromFile("", utils.KubeconfigGardener,
 				kubernetes.WithClientOptions(client.Options{Scheme: api.Scheme}),
 				kubernetes.WithClientConnectionOptions(
 					componentbaseconfigv1alpha1.ClientConnectionConfiguration{QPS: 100, Burst: 130}),
@@ -129,7 +140,7 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 				Spec: controlplanev1alpha1.GardenerShootControlPlaneSpec{
 					ProjectNamespace: "garden-local",
 					Provider:         controlplanev1alpha1.ProviderGSCP{Type: "local"},
-					Kubernetes:       gardenercorev1beta1.Kubernetes{Version: "1.32"},
+					Kubernetes:       gardenercorev1beta1.Kubernetes{Version: "1"},
 					CloudProfile:     &gardenercorev1beta1.CloudProfileReference{Name: "local"},
 					Workerless:       true,
 				},
@@ -187,7 +198,7 @@ var _ = Describe("Manager", Ordered, Label("kind-kcp"), func() {
 			Eventually(func(g Gomega) {
 				g.Expect(gardenerClient.Client().Get(ctx, client.ObjectKeyFromObject(shoot), shoot)).To(Succeed())
 				g.Expect(shoot.Status.LastOperation).ToNot(BeNil())
-			}).WithTimeout(30 * time.Second).Should(Succeed())
+			}).WithTimeout(2 * time.Minute).Should(Succeed())
 
 			By(fmt.Sprintf("Ensure control plane is reconciled and shoot is created (Name: %s)", controlPlaneSpec.Name))
 			Eventually(func(g Gomega) {

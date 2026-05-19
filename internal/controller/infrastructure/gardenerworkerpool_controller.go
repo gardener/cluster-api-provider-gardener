@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	"sigs.k8s.io/multicluster-runtime/pkg/multicluster"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	infrastructurev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/infrastructure/v1alpha1"
@@ -351,7 +352,7 @@ func (r *GardenerWorkerPoolReconciler) MapShootToGardenerWorkerPoolObject(ctx co
 				Namespace: namespace,
 			},
 		},
-			ClusterName: clusterName,
+			ClusterName: multicluster.ClusterName(clusterName),
 		})
 	}
 	return requests

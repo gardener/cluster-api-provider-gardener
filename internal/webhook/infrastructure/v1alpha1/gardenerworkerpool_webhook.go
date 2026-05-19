@@ -6,15 +6,12 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/cluster-api/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	controlplanev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/controlplane/v1alpha1"
@@ -28,7 +25,7 @@ var gardenerworkerpoollog = logf.Log.WithName("gardenerworkerpool-resource")
 
 // SetupGardenerWorkerPoolWebhookWithManager registers the webhook for GardenerWorkerPool in the manager.
 func SetupGardenerWorkerPoolWebhookWithManager(mgr ctrl.Manager, gardenerClient client.Client) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&infrastructurev1alpha1.GardenerWorkerPool{}).
+	return ctrl.NewWebhookManagedBy(mgr, &infrastructurev1alpha1.GardenerWorkerPool{}).
 		WithValidator(&GardenerWorkerPoolCustomValidator{
 			Client:         mgr.GetClient(),
 			GardenerClient: gardenerClient,
@@ -50,36 +47,26 @@ type GardenerWorkerPoolCustomValidator struct {
 	GardenerClient client.Client
 }
 
-var _ webhook.CustomValidator = &GardenerWorkerPoolCustomValidator{}
+var _ admission.Validator[*infrastructurev1alpha1.GardenerWorkerPool] = &GardenerWorkerPoolCustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type GardenerWorkerPool.
-func (v *GardenerWorkerPoolCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	_, ok := obj.(*infrastructurev1alpha1.GardenerWorkerPool)
-	if !ok {
-		return nil, fmt.Errorf("expected a GardenerWorkerPool object but got %T", obj)
-	}
-
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type GardenerWorkerPool.
+func (v *GardenerWorkerPoolCustomValidator) ValidateCreate(_ context.Context, _ *infrastructurev1alpha1.GardenerWorkerPool) (admission.Warnings, error) {
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type GardenerWorkerPool.
-func (v *GardenerWorkerPoolCustomValidator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	workerPool, ok := newObj.(*infrastructurev1alpha1.GardenerWorkerPool)
-	if !ok {
-		return nil, fmt.Errorf("expected a GardenerWorkerPool object for the newObj but got %T", newObj)
-	}
-
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type GardenerWorkerPool.
+func (v *GardenerWorkerPoolCustomValidator) ValidateUpdate(ctx context.Context, _, workerPool *infrastructurev1alpha1.GardenerWorkerPool) (admission.Warnings, error) {
 	machinePool, err := providerutil.GetMachinePoolForWorkerPool(ctx, v.Client, workerPool)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get machine pool for worker pool: %w", err)
+		return nil, err
 	}
 	if machinePool == nil {
-		return nil, fmt.Errorf("machine pool not found for worker pool %s/%s", workerPool.Namespace, workerPool.Name)
+		return nil, nil
 	}
 
 	cluster, err := util.GetOwnerCluster(ctx, v.Client, machinePool.ObjectMeta)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch owner cluster: %w", err)
+		return nil, err
 	}
 	if cluster == nil {
 		return nil, nil
@@ -100,12 +87,7 @@ func (v *GardenerWorkerPoolCustomValidator) ValidateUpdate(ctx context.Context, 
 	return nil, client.IgnoreNotFound(v.GardenerClient.Update(ctx, shoot, &client.UpdateOptions{DryRun: []string{"All"}}))
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type GardenerWorkerPool.
-func (v *GardenerWorkerPoolCustomValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	_, ok := obj.(*infrastructurev1alpha1.GardenerWorkerPool)
-	if !ok {
-		return nil, fmt.Errorf("expected a GardenerWorkerPool object but got %T", obj)
-	}
-
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type GardenerWorkerPool.
+func (v *GardenerWorkerPoolCustomValidator) ValidateDelete(_ context.Context, _ *infrastructurev1alpha1.GardenerWorkerPool) (admission.Warnings, error) {
 	return nil, nil
 }

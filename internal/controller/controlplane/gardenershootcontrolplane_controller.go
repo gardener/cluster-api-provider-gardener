@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	"sigs.k8s.io/multicluster-runtime/pkg/multicluster"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	controlplanev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/controlplane/v1alpha1"
@@ -90,7 +91,7 @@ func (r *GardenerShootControlPlaneReconciler) Reconcile(ctx context.Context, req
 
 	cpc := ControlPlaneContext{
 		ctx:         ctx,
-		clusterName: req.ClusterName,
+		clusterName: string(req.ClusterName),
 	}
 
 	log.Info("Reconciling GardenerShootControlPlane")
@@ -575,5 +576,5 @@ func (r *GardenerShootControlPlaneReconciler) MapShootToControlPlaneObject(ctx c
 			Namespace: namespace,
 		},
 	}
-	return []mcreconcile.Request{{Request: reconcile.Request{NamespacedName: client.ObjectKeyFromObject(controlPlane)}, ClusterName: clusterName}}
+	return []mcreconcile.Request{{Request: reconcile.Request{NamespacedName: client.ObjectKeyFromObject(controlPlane)}, ClusterName: multicluster.ClusterName(clusterName)}}
 }

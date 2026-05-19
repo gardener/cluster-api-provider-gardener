@@ -9,13 +9,11 @@ import (
 	"fmt"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/cluster-api/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	controlplanev1alpha1 "github.com/gardener/cluster-api-provider-gardener/api/controlplane/v1alpha1"
@@ -29,7 +27,7 @@ var _ = logf.Log.WithName("gardenershootcluster-resource")
 
 // SetupGardenerShootClusterWebhookWithManager registers the webhook for GardenerShootCluster in the manager.
 func SetupGardenerShootClusterWebhookWithManager(mgr ctrl.Manager, gardenerClient client.Client) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&infrastructurev1alpha1.GardenerShootCluster{}).
+	return ctrl.NewWebhookManagedBy(mgr, &infrastructurev1alpha1.GardenerShootCluster{}).
 		WithValidator(&GardenerShootClusterCustomValidator{
 			Client:         mgr.GetClient(),
 			GardenerClient: gardenerClient,
@@ -51,25 +49,15 @@ type GardenerShootClusterCustomValidator struct {
 	Client         client.Client
 }
 
-var _ webhook.CustomValidator = &GardenerShootClusterCustomValidator{}
+var _ admission.Validator[*infrastructurev1alpha1.GardenerShootCluster] = &GardenerShootClusterCustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type GardenerShootCluster.
-func (v *GardenerShootClusterCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	_, ok := obj.(*infrastructurev1alpha1.GardenerShootCluster)
-	if !ok {
-		return nil, fmt.Errorf("expected a GardenerShootCluster object but got %T", obj)
-	}
-
+// ValidateCreate implements admission.Validator so a webhook will be registered for the type GardenerShootCluster.
+func (v *GardenerShootClusterCustomValidator) ValidateCreate(_ context.Context, _ *infrastructurev1alpha1.GardenerShootCluster) (admission.Warnings, error) {
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type GardenerShootCluster.
-func (v *GardenerShootClusterCustomValidator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
-	shootCluster, ok := newObj.(*infrastructurev1alpha1.GardenerShootCluster)
-	if !ok {
-		return nil, fmt.Errorf("expected a GardenerShootCluster object for the newObj but got %T", newObj)
-	}
-
+// ValidateUpdate implements admission.Validator so a webhook will be registered for the type GardenerShootCluster.
+func (v *GardenerShootClusterCustomValidator) ValidateUpdate(ctx context.Context, _, shootCluster *infrastructurev1alpha1.GardenerShootCluster) (admission.Warnings, error) {
 	// For the update, we need to get the actual cluster.
 	cluster, err := util.GetOwnerCluster(ctx, v.Client, shootCluster.ObjectMeta)
 	if err != nil {
@@ -96,12 +84,7 @@ func (v *GardenerShootClusterCustomValidator) ValidateUpdate(ctx context.Context
 	return nil, client.IgnoreNotFound(v.GardenerClient.Update(ctx, shoot, &client.UpdateOptions{DryRun: []string{"All"}}))
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type GardenerShootCluster.
-func (v *GardenerShootClusterCustomValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	_, ok := obj.(*infrastructurev1alpha1.GardenerShootCluster)
-	if !ok {
-		return nil, fmt.Errorf("expected a GardenerShootCluster object but got %T", obj)
-	}
-
+// ValidateDelete implements admission.Validator so a webhook will be registered for the type GardenerShootCluster.
+func (v *GardenerShootClusterCustomValidator) ValidateDelete(_ context.Context, _ *infrastructurev1alpha1.GardenerShootCluster) (admission.Warnings, error) {
 	return nil, nil
 }

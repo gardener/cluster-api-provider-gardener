@@ -170,6 +170,14 @@ var _ = Describe("Manager", Ordered, Label("kind"), func() {
 				kubernetes.WithDisabledCachedClient(),
 			)
 			Expect(err).ToNot(HaveOccurred())
+			gardenerClient, err := kubernetes.NewClientFromFile("", utils.KubeconfigGardener,
+				kubernetes.WithClientOptions(client.Options{Scheme: api.Scheme}),
+				kubernetes.WithClientConnectionOptions(
+					componentbaseconfigv1alpha1.ClientConnectionConfiguration{QPS: 100, Burst: 130}),
+				kubernetes.WithAllowedUserFields([]string{kubernetes.AuthTokenFile}),
+				kubernetes.WithDisabledCachedClient(),
+			)
+			Expect(err).ToNot(HaveOccurred())
 
 			namePrefix := "e2e-kind-"
 
@@ -185,7 +193,7 @@ var _ = Describe("Manager", Ordered, Label("kind"), func() {
 				Spec: controlplanev1alpha1.GardenerShootControlPlaneSpec{
 					ProjectNamespace: "garden-local",
 					Provider:         controlplanev1alpha1.ProviderGSCP{Type: "local"},
-					Kubernetes:       gardenercorev1beta1.Kubernetes{Version: "1.32"},
+					Kubernetes:       gardenercorev1beta1.Kubernetes{Version: "1"},
 					CloudProfile:     &gardenercorev1beta1.CloudProfileReference{Name: "local"},
 					Workerless:       true,
 				},
@@ -241,7 +249,7 @@ var _ = Describe("Manager", Ordered, Label("kind"), func() {
 
 			By(fmt.Sprintf("Ensure control plane is reconciled and shoot is created (Name: %s)", controlPlaneSpec.Name))
 			Eventually(func(g Gomega) {
-				g.Expect(clusterClient.Client().Get(ctx, client.ObjectKeyFromObject(shoot), shoot)).To(Succeed())
+				g.Expect(gardenerClient.Client().Get(ctx, client.ObjectKeyFromObject(shoot), shoot)).To(Succeed())
 				g.Expect(shoot.Status.LastOperation).ToNot(BeNil())
 				g.Expect(shoot.Status.LastOperation.Progress).To(BeEquivalentTo(100))
 				g.Expect(shoot.Status.LastOperation.State).To(Equal(gardenercorev1beta1.LastOperationStateSucceeded))
@@ -255,7 +263,7 @@ var _ = Describe("Manager", Ordered, Label("kind"), func() {
 
 			By("Ensure shoot receives delete request")
 			Eventually(func(g Gomega) {
-				g.Expect(clusterClient.Client().Get(ctx, client.ObjectKeyFromObject(shoot), shoot)).To(Succeed())
+				g.Expect(gardenerClient.Client().Get(ctx, client.ObjectKeyFromObject(shoot), shoot)).To(Succeed())
 				g.Expect(shoot.DeletionTimestamp).ToNot(BeNil())
 			}).Should(Succeed())
 

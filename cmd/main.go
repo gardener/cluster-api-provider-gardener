@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
-	apisv1alpha2 "github.com/kcp-dev/kcp/sdk/apis/apis/v1alpha2"
 	"github.com/kcp-dev/multicluster-provider/apiexport"
+	apisv1alpha2 "github.com/kcp-dev/sdk/apis/apis/v1alpha2"
 	"golang.org/x/sync/errgroup"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
@@ -216,23 +216,22 @@ func main() {
 	if isKcp, err = util.HasKcpAPIGroups(restConfig); err != nil {
 		setupLog.Error(err, "to determine if kcp API Group is present")
 	}
-	if isKcp {
-		setupLog.Info("Found KCP APIs, looking up virtual workspace URL")
-		restConfig, err = util.RestConfigForLogicalClusterHostingAPIExport(mgrContext, restConfig, apiExportName)
-		if err != nil {
-			setupLog.Error(err, "looking up virtual workspace URL")
-			os.Exit(1)
-		}
-	}
 
 	var provider util.ProviderWithRun
 	if isKcp {
-		provider, err = apiexport.New(restConfig, apiexport.Options{
+		setupLog.Info("Found KCP APIs, looking up virtual workspace URL")
+		provider, err = apiexport.New(restConfig, apiExportName, apiexport.Options{
 			Scheme:        controlplanev1alpha1.Scheme,
 			ObjectToWatch: &apisv1alpha2.APIBinding{},
 		})
 		if err != nil {
 			setupLog.Error(err, "unable to create kcp Provider")
+			os.Exit(1)
+		}
+
+		restConfig, err = util.RestConfigForLogicalClusterHostingAPIExport(mgrContext, restConfig, apiExportName)
+		if err != nil {
+			setupLog.Error(err, "looking up virtual workspace URL")
 			os.Exit(1)
 		}
 	}
@@ -412,10 +411,14 @@ func main() {
 	}
 
 	g, ctx := errgroup.WithContext(mgrContext)
-	setupLog.Info("starting provider")
-	g.Go(func() error {
-		return ignoreCanceled(provider.Run(ctx, mgr))
-	})
+	if !isKcp {
+		// In the KCP path, mgr.Start already starts the provider (it implements ProviderRunnable).
+		// In the non-KCP path the provider was created after mcmanager.New and is not known to the manager.
+		setupLog.Info("starting provider")
+		g.Go(func() error {
+			return ignoreCanceled(provider.Start(ctx, mgr))
+		})
+	}
 	setupLog.Info("starting multicluster manager")
 	g.Go(func() error {
 		return ignoreCanceled(mgr.Start(ctx))
