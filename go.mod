@@ -7,7 +7,7 @@ require (
 	github.com/gardener/gardener v1.142.0
 	github.com/gardener/gardener/pkg/apis v1.142.0
 	github.com/google/gofuzz v1.2.0
-	github.com/kcp-dev/multicluster-provider v0.7.0
+	github.com/kcp-dev/multicluster-provider v0.7.1
 	github.com/kcp-dev/sdk v0.31.1
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.40.0
