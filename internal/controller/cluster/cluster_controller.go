@@ -193,7 +193,7 @@ func ensureOwnerRef(ctx context.Context, c client.Client, obj metav1.Object, clu
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterController) SetupWithManager(mgr mcmanager.Manager) error {
-	if r.Manager != nil {
+	if r.Manager == nil {
 		r.Manager = mgr
 	}
 	return mcbuilder.ControllerManagedBy(mgr).
