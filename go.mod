@@ -8,7 +8,7 @@ require (
 	github.com/gardener/gardener/pkg/apis v1.142.0
 	github.com/google/gofuzz v1.2.0
 	github.com/kcp-dev/multicluster-provider v0.7.1
-	github.com/kcp-dev/sdk v0.31.2
+	github.com/kcp-dev/sdk v0.31.6
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.40.0
 	github.com/valyala/fastjson v1.6.10
@@ -120,7 +120,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.13-0.20220915233716-71ac16282d12 // indirect
-	github.com/kcp-dev/apimachinery/v2 v2.31.2 // indirect
+	github.com/kcp-dev/apimachinery/v2 v2.31.6 // indirect
 	github.com/kcp-dev/logicalcluster/v3 v3.0.5 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0 // indirect
