@@ -74,7 +74,7 @@ func (r *MachinePoolController) Reconcile(ctx context.Context, req mcreconcile.R
 		return ctrl.Result{}, err
 	}
 
-	if infraRefGroupKind := machinePool.Spec.Template.Spec.InfrastructureRef.GroupKind(); infraRefGroupKind != infrastructurev1alpha1.GroupVersion.WithKind("GardenerWorkerPool").GroupKind() {
+	if infraRefGroupKind := machinePool.Spec.Template.Spec.InfrastructureRef.GroupKind(); infraRefGroupKind != infrastructurev1alpha1.SchemeGroupVersion.WithKind("GardenerWorkerPool").GroupKind() {
 		log.Info(fmt.Sprintf("%s is not a GardenerWorkerPool", infraRefGroupKind))
 		return ctrl.Result{}, nil
 	}

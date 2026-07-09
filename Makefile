@@ -5,9 +5,9 @@
 ENSURE_GARDENER_MOD      := $(shell go get github.com/gardener/gardener@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener))
 ENSURE_GARDENER_APIS_MOD := $(shell go get github.com/gardener/gardener/pkg/apis@$$(go list -m -f "{{.Version}}" github.com/gardener/gardener/pkg/apis))
 ENSURE_CAPI_MOD          := $(shell go get sigs.k8s.io/cluster-api@$$(go list -m -f "{{.Version}}" sigs.k8s.io/cluster-api))
-GARDENER_HACK_DIR   := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
-REPO_ROOT           := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-HACK_DIR            := $(REPO_ROOT)/hack
+GARDENER_HACK_DIR        := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
+REPO_ROOT                := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+HACK_DIR                 := $(REPO_ROOT)/hack
 
 # Image URL to use all building/pushing image targets
 IMG                 ?= registry.local.gardener.cloud:5001/cluster-api-provider-gardener/controller:latest
@@ -149,7 +149,7 @@ format: $(GOIMPORTS) $(GOIMPORTSREVISER) ## Format imports.
 	@./hack/format.sh ./api ./cmd ./internal ./test
 
 .PHONY: lint
-lint: $(GOLANGCI_LINT) ## Run golangci-lint linter
+lint: $(LOGCHECK) $(GOLANGCI_LINT) ## Run golangci-lint linter
 	@golangci-lint run --timeout 10m
 
 .PHONY: lint-fix

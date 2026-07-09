@@ -74,5 +74,5 @@ type GardenerShootClusterList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&GardenerShootCluster{}, &GardenerShootClusterList{})
+	SchemeBuilder.Register()
 }

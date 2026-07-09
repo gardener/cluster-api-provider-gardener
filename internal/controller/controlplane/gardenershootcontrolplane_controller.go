@@ -305,7 +305,7 @@ func (r *GardenerShootControlPlaneReconciler) getWorkerPoolsForCluster(cpc Contr
 		if machinePool.Spec.ClusterName != cpc.cluster.Name {
 			continue
 		}
-		if machinePool.Spec.Template.Spec.InfrastructureRef.GroupKind() != infrastructurev1alpha1.GroupVersion.WithKind("GardenerWorkerPool").GroupKind() {
+		if machinePool.Spec.Template.Spec.InfrastructureRef.GroupKind() != infrastructurev1alpha1.SchemeGroupVersion.WithKind("GardenerWorkerPool").GroupKind() {
 			continue
 		}
 		workerRef := machinePool.Spec.Template.Spec.InfrastructureRef
