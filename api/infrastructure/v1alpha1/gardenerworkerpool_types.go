@@ -133,5 +133,5 @@ type GardenerWorkerPoolList struct {
 }
 
 func init() {
-	SchemeBuilder.Register(&GardenerWorkerPool{}, &GardenerWorkerPoolList{})
+	SchemeBuilder.Register()
 }
