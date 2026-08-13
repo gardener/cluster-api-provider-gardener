@@ -303,9 +303,11 @@ func ShootFromCluster(ctx context.Context, gardenerClient client.Client, client 
 // GetMachinePoolForWorkerPool retrieves the MachinePool that owns the given GardenerWorkerPool.
 func GetMachinePoolForWorkerPool(ctx context.Context, c client.Client, workerPool *infrastructurev1alpha1.GardenerWorkerPool) (*clusterv1beta2.MachinePool, error) {
 	log := runtimelog.FromContext(ctx).WithValues("operation", "GetMachinePoolForWorkerPool")
-	machinePool := &clusterv1beta2.MachinePool{}
+	var machinePool *clusterv1beta2.MachinePool
 	for _, owner := range workerPool.OwnerReferences {
 		if owner.Kind == "MachinePool" && owner.APIVersion == clusterv1beta2.GroupVersion.String() {
+			machinePool = &clusterv1beta2.MachinePool{}
+
 			if err := c.Get(ctx, client.ObjectKey{Namespace: workerPool.Namespace, Name: owner.Name}, machinePool); err != nil {
 				if apierrors.IsNotFound(err) {
 					log.Info("MachinePool not found or already deleted")
@@ -315,10 +317,10 @@ func GetMachinePoolForWorkerPool(ctx context.Context, c client.Client, workerPoo
 				return nil, err
 			}
 			log.Info("Found owning MachinePool", "machinepool", machinePool.Name)
-			break
+	        return machinePool, nil
 		}
 	}
-	return machinePool, nil
+	return nil, nil
 }
 
 // IsShootSpecEqual checks if the original and updated GardenerShoot specs and annotations are equal.
