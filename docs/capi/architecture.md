@@ -34,4 +34,4 @@ The `Shoot` API is distributed over the different provider API resources (`Garde
 > 
 > In addition to that, we provide sample manifests in the [`examples`](../../config/samples) directory of this repository. ✨
 
-![Image of the translation between Gardener API and Gardener API](./translation.svg)
+![Image of the translation between CAPI resources and Gardener Shoot API](./translation.svg)
