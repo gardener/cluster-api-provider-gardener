@@ -160,8 +160,8 @@ github.com/gardener/cert-management v0.23.0 h1:kD88XcPn6C4zLc8EYtrHyb+/45Iyaozhb
 github.com/gardener/cert-management v0.23.0/go.mod h1:Mehn8XY+iAkm8XOBbNGHmbMft8fP9ZEJFWzWSonPkfc=
 github.com/gardener/etcd-druid/api v0.37.0 h1:qnix78KixCHjKGYQ0tT2wGzgVyO996feIFtFqW0DlaQ=
 github.com/gardener/etcd-druid/api v0.37.0/go.mod h1:nFKkRStJEXoYE0xGf2Y5Ela1EayAdsfZAqfK+bBXV/M=
-github.com/gardener/gardener v1.146.3 h1:mb5IrUC/iCnK828QmoFQwHv3eUGcYwFFQEYMBEWaXD8=
-github.com/gardener/gardener v1.146.3/go.mod h1:BL4tsbuXJkgPlotTOFcU0BKQHAf21l6z/OQo7A3grTU=
+github.com/gardener/gardener v1.146.6 h1:MGi7xbAwxo4pbZS2/Y+nJcJkMh5iYMeN9PE6dikvkxA=
+github.com/gardener/gardener v1.146.6/go.mod h1:BL4tsbuXJkgPlotTOFcU0BKQHAf21l6z/OQo7A3grTU=
 github.com/gardener/gardener/hack/tools v1.146.3 h1:zM4Z1PocDRVRDgFgeuuUyuNaYXMgttbLlrDqWeKaE2A=
 github.com/gardener/gardener/hack/tools v1.146.3/go.mod h1:AYY/L1q1uzpKUYUN+KWHj4Ke6OUxcc6k9RyRkUVFYFc=
 github.com/gardener/gardener/pkg/apis v1.146.3 h1:9VM5K4vh6YI/MzMIut7AdpOqNMXTVycqXyLIVmQ2Tms=
