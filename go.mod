@@ -6,7 +6,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/gardener/gardener v1.146.3
-	github.com/gardener/gardener/hack/tools v1.146.3
+	github.com/gardener/gardener/hack/tools v1.146.6
 	github.com/gardener/gardener/pkg/apis v1.146.3
 	github.com/gobuffalo/flect v1.0.3
 	github.com/kcp-dev/multicluster-provider v0.8.0
