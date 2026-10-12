@@ -450,6 +450,13 @@ spec:
                           ImageMinimumGCAge is the minimum age of an unused image before it can be garbage collected.
                           Default: 2m0s
                         type: string
+                      imagePullCredentialsVerificationPolicy:
+                        description: |-
+                          ImagePullCredentialsVerificationPolicy determines how credentials should be verified when pulling images that
+                          already exist on the node. It corresponds to the kubelet's `imagePullCredentialsVerificationPolicy` field and is only
+                          effective for Kubernetes versions >= 1.35. May be one of {"NeverVerify", "NeverVerifyPreloadedImages",
+                          "NeverVerifyAllowlistedImages", "AlwaysVerify"}. Defaults to "NeverVerifyPreloadedImages" (the kubelet default).
+                        type: string
                       kubeReserved:
                         description: |-
                           KubeReserved is the configuration for resources reserved for kubernetes node components (mainly kubelet and container runtime).
@@ -514,6 +521,16 @@ spec:
                           IDs per pod allowed by the kubelet.
                         format: int64
                         type: integer
+                      preloadedImagesVerificationAllowlist:
+                        description: |-
+                          PreloadedImagesVerificationAllowlist specifies a list of images that are exempted from credential
+                          re-verification for the "NeverVerifyAllowlistedImages" ImagePullCredentialsVerificationPolicy. The list accepts a
+                          full path segment wildcard suffix "/*". Only image specs without an image tag or digest must be used. It
+                          corresponds to the kubelet's `preloadedImagesVerificationAllowlist` field and is only effective for Kubernetes versions
+                          >= 1.35.
+                        items:
+                          type: string
+                        type: array
                       protectKernelDefaults:
                         description: |-
                           ProtectKernelDefaults ensures that the kernel tunables are equal to the kubelet defaults.
@@ -609,6 +626,12 @@ spec:
                 description: MachineControllerManagerSettings contains configurations
                   for different worker-pools. Eg. MachineDrainTimeout, MachineHealthTimeout.
                 properties:
+                  autoPreserveFailedMachineMax:
+                    description: |-
+                      AutoPreserveFailedMachineMax is the maximum number of machines that can be auto-preserved by MCM for the worker pool.
+                      This value is distributed across zones like Minimum and Maximum.
+                    format: int32
+                    type: integer
                   disableHealthTimeout:
                     description: |-
                       DisableHealthTimeout if set to true, health timeout will be ignored. Leading to machine never being declared failed.
@@ -629,6 +652,14 @@ spec:
                   machineHealthTimeout:
                     description: MachineHealthTimeout is the period after which machine
                       is declared failed.
+                    type: string
+                  machinePreserveTimeout:
+                    description: |-
+                      MachinePreserveTimeout defines the duration after which machine preservation is disabled.
+                      If preservation is disabled while the machine is in the Failed phase, the machine transitions
+                      to the Terminating phase. For machines in any other phase, disabling preservation does not
+                      alter the current phase, and normal behavior and phase transitions continue as usual.
+                      However, the Cluster Autoscaler (CA) may scale down the machine if required.
                     type: string
                   maxEvictRetries:
                     description: MaxEvictRetries are the number of eviction retries
